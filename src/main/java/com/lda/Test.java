@@ -10,68 +10,28 @@ import com.github.chen0040.lda.Doc;
 import com.github.chen0040.lda.Lda;
 import com.github.chen0040.lda.LdaResult;
 
-//https://github.com/uttesh/exude
-import com.uttesh.exude.ExudeData;
-import com.uttesh.exude.exception.InvalidDataException;
+import com.lda.util.ReadFile;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Scanner;
 
 /**
  *
  * @author S410U
  */
 public class Test {
-
-    public final static int numberFile = 1001;
-
-    public static String[] readFilesForFolder(final File folder) {
-        String[] dataset = new String[numberFile];
-        int i = 0;
-        for (final File fileEntry : folder.listFiles()) {
-            if (fileEntry.isDirectory()) {
-                readFilesForFolder(fileEntry);
-            } else {
-                //System.out.println(fileEntry.getName());
-                try {
-                    Scanner sc = new Scanner(fileEntry);
-
-                    while (sc.hasNextLine()) {
-                        String t = sc.nextLine();
-                        try {
-                            //t = ExudeData.getInstance().filterStoppingsKeepDuplicates(t);
-                            t = ExudeData.getInstance().filterStoppings(t);
-                        } catch (InvalidDataException e) {
-                            e.printStackTrace();
-                        }
-                        //System.out.println(t);
-                        if (i >= numberFile) {
-                            break;
-                        }
-                        dataset[i] = t;
-                    }
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
-                }
-
-                i++;
-            }
-        }
-        return dataset;
-    }
+    
+    private final static File folder = new File("src/main/resources/pos");
 
     public static void main(String[] args) {
-        final File folder = new File("src/main/resources/neg");
 //        String[] abc = listFilesForFolder(folder);
 //        System.out.println("Line: " + abc.length);
 //        for (String t : abc) {
 //            System.out.println(t);
 //        }
 
-        List<String> docs = Arrays.asList(readFilesForFolder(folder));
+        List<String> docs = ReadFile.Dataset(folder);
 
         Lda method = new Lda();
         method.setTopicCount(20);
