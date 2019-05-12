@@ -29,11 +29,14 @@ public class Example {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
+        System.setProperty("hadoop.home.dir", "C:\\Spark\\");
+        
         //ReadFile.numberFile = 10;
         // TODO code application logic here
         SparkSession spark = SparkSession
                 .builder()
                 .appName("JavaLDAExample")
+                .master("local")
                 .getOrCreate();
 
         Dataset<Row> rData = spark.createDataset(ReadFile.Dataset(folder), Encoders.STRING()).toDF();
