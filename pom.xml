@@ -1,26 +1,17 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.lda</groupId>
-    <artifactId>LDA</artifactId>
+    <groupId>lda</groupId>
+    <artifactId>lda</artifactId>
     <version>1.0</version>
+    <name>lda</name>
     <packaging>jar</packaging>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>1.7</maven.compiler.source>
+        <maven.compiler.target>1.7</maven.compiler.target>
     </properties>
     <dependencies>
-        <dependency>
-            <groupId>com.github.chen0040</groupId>
-            <artifactId>java-lda</artifactId>
-            <version>1.0.4</version>
-        </dependency>
-        <dependency>
-            <groupId>com.uttesh</groupId>
-            <artifactId>exude</artifactId>
-            <version>0.0.4</version>
-        </dependency>
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-mllib_2.11</artifactId>
@@ -36,5 +27,7 @@
             <artifactId>spark-core_2.11</artifactId>
             <version>2.3.3</version>
         </dependency>
+
     </dependencies>
+
 </project>
