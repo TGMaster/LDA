@@ -19,7 +19,7 @@ import scala.Tuple2;
  *
  * @author 9999
  */
-public class Evaluation {
+public class Testing {
 
     /**
      * @param args the command line arguments
@@ -32,7 +32,7 @@ public class Evaluation {
         SparkConf conf = new SparkConf().setAppName("LDA Example");
         conf.set("spark.app.name", "My Spark App");
         conf.set("spark.master", "local[*]");
-        conf.set("spark.executor.memory", "16g");
+        conf.set("spark.executor.memory", "2g");
         conf.set("spark.ui.port", "36000");
         JavaSparkContext sc = new JavaSparkContext(conf);
 

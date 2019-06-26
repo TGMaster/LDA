@@ -1,130 +1,106 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package lda;
 
-import scala.Tuple2;
-import org.apache.spark.mllib.clustering.DistributedLDAModel;
-import org.apache.spark.mllib.clustering.LDA;
-import org.apache.spark.mllib.linalg.Vector;
-
-import java.util.List;
 import java.io.BufferedWriter;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
-import java.io.Serializable;
 import java.io.Writer;
-import java.util.Arrays;
+import scala.Tuple2;
 
-import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.api.java.*;
 import org.apache.spark.api.java.function.Function;
-import org.apache.spark.mllib.clustering.LDAModel;
+import org.apache.spark.mllib.clustering.DistributedLDAModel;
+import org.apache.spark.mllib.clustering.LDA;
+import org.apache.spark.mllib.linalg.Matrix;
+import org.apache.spark.mllib.linalg.Vector;
+import org.apache.spark.mllib.linalg.Vectors;
+import org.apache.spark.SparkConf;
 import org.apache.spark.mllib.clustering.LocalLDAModel;
-import org.apache.spark.mllib.clustering.OnlineLDAOptimizer;
-import org.apache.spark.storage.StorageLevel;
-
-class Content implements Function<String, List<String>>, Serializable {
-
-    public List<String> call(String content) throws Exception {
-        String[] string_arrays = content.toLowerCase().split("\\s");
-        return Arrays.asList(string_arrays);
-    }
-}
 
 public class JavaLDAExample {
 
     public static void main(String[] args) {
-        int numTopics = 100;
-        int maxIterations = 50;
-        int maxTermsPerTopic = 20;
-        boolean isTest = false;
-
         System.setProperty("hadoop.home.dir", "C:\\Spark\\");
 
         SparkConf conf = new SparkConf().setAppName("LDA Example");
         conf.set("spark.app.name", "My Spark App");
         conf.set("spark.master", "local[*]");
-        conf.set("spark.executor.memory", "16g");
+        conf.set("spark.executor.memory", "2g");
         conf.set("spark.ui.port", "36000");
         JavaSparkContext sc = new JavaSparkContext(conf);
-        
-        JavaRDD<Tuple2<Long, Vector>> documents = sc.objectFile("src/main/resources/documents/train");
-        JavaPairRDD<Long, Vector> cor = JavaPairRDD.fromJavaRDD(documents);
-        cor.persist(StorageLevel.MEMORY_AND_DISK());
 
-        //LDA
-//        OnlineLDAOptimizer optimizer = new OnlineLDAOptimizer().setMiniBatchFraction(2.0/maxIterations);
-        LDAModel ldaModel = new LDA()
-                .setK(numTopics)
-                .setMaxIterations(maxIterations)
-//                .setAlpha(50/numTopics) //50/numTopics
-//                .setBeta(0.1) //0.1.
-//                .setTopicConcentration(-1)
-//                .setDocConcentration(-1)
-                .setSeed(1L)
-//                .setOptimizer(optimizer)
-                .run(cor);
-
-        ldaModel.save(sc.sc(), "src/main/resources/models");
-        DistributedLDAModel distLDA = (DistributedLDAModel) ldaModel;
-        double avgLogLikelihood = distLDA.logLikelihood() / documents.count();
-
-        JavaRDD<Tuple2<Object, Vector>> topicdistributes = distLDA.topicDistributions().toJavaRDD();
-        Tuple2<int[], double[]>[] topicIndices = ldaModel.describeTopics(maxTermsPerTopic);
-
-        if (isTest) {
-            LocalLDAModel ldaLocal = distLDA.toLocal();
-            JavaPairRDD<Long, Vector> test = JavaPairRDD.fromJavaRDD(splits[0]);
-            JavaPairRDD<Long, Vector> localPredict = ldaLocal.topicDistributions(test);
-            Tuple2<int[], double[]>[] localIndices = ldaLocal.describeTopics(maxTermsPerTopic);
-
-            try (Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("output_test.txt"), "utf-8"))) {
+        // Load and parse the data
+        String path = "src/main/resources/sample_modified.txt";
+        JavaRDD<String> data = sc.textFile(path);
+        JavaRDD<Vector> parsedData = data.map(
+                new Function<String, Vector>() {
+            public Vector call(String s) {
+                String[] sarray = s.trim().split(" ");
                 int count = 0;
-                writer.write("Vocabsize: " + distLDA.vocabSize() + "\n");
-                //System.out.println("The lower bound on loglikelihood: " + ldaLocal.logLikelihood(test)/documents.count() + "\n");
-                //System.out.println("The upper bound on perplexity: " + ldaLocal.logPerplexity(test) + "\n");
-                writer.write("Predict:\n");
-                for (Tuple2<Long, Vector> item : localPredict.collect()) {
-                    writer.write(vocabArray.get(item._1().intValue()) + ":\t" + item._2.toJson() + "\n");
+                for (int i = 0; i < sarray.length; i++) {
+                    if (sarray[i].equals("0"))
+                        count++;
                 }
-                writer.write("\n");
-                for (Tuple2<int[], double[]> topic : localIndices) {
-                    count++;
-                    writer.write("TOPIC " + count + ":\n");
-                    int[] terms = topic._1;
-                    double[] termWeights = topic._2;
-                    for (int i = 0; i < terms.length; i++) {
-                        writer.write(vocabArray.get(terms[i]) + ":\t" + termWeights[i] + "\n");
+                int[] indices = new int[sarray.length-count];
+                double[] values = new double[sarray.length-count];
+                int k = 0;
+                for (int i = 0; i < sarray.length; i++) {
+                    if (!sarray[i].equals("0")) {
+                        indices[k] = i;
+                        values[k] = Double.parseDouble(sarray[i]);
+                        k++;
                     }
-                    writer.write("\n");
-
+                    
                 }
-            } catch (Exception e) {
-                // TODO: handle exception
+                return Vectors.sparse(15, indices, values);
             }
         }
+        );
+        // Index documents with unique IDs
+        JavaPairRDD<Long, Vector> corpus = JavaPairRDD.fromJavaRDD(parsedData.zipWithIndex().map(
+                new Function<Tuple2<Vector, Long>, Tuple2<Long, Vector>>() {
+            public Tuple2<Long, Vector> call(Tuple2<Vector, Long> doc_id) {
+                return doc_id.swap();
+            }
+        }
+        ));
+        corpus.cache();
+        corpus.saveAsTextFile("src/main/resources/example");
 
-//		for(Tuple2<Object, Vector> item: topicdistributes.collect()){
-//			System.out.println(item._2);
-//		}
+        // Cluster the documents into three topics using LDA
+        DistributedLDAModel ldaModel = (DistributedLDAModel) new LDA().setK(3).run(corpus);
+        LocalLDAModel localModel = ldaModel.toLocal();
+
         try (Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("output_train.txt"), "utf-8"))) {
-            int count = 0;
-            writer.write("Vocabsize: " + distLDA.vocabSize() + "\n");
-            writer.write("Log likelihood: " + avgLogLikelihood + "\n");
-            for (Tuple2<int[], double[]> topic : topicIndices) {
-                count++;
-                writer.write("TOPIC " + count + ":\n");
-                int[] terms = topic._1;
-                double[] termWeights = topic._2;
-                for (int i = 0; i < terms.length; i++) {
-                    writer.write(terms[i] + ":\t" + termWeights[i] + "\n");
+            // Output topics. Each is a distribution over words (matching word count vectors)
+            writer.write("Learned topics (as distributions over vocab of " + ldaModel.vocabSize() + " words):\n");
+            Matrix topics = ldaModel.topicsMatrix();
+            for (int topic = 0; topic < 3; topic++) {
+                writer.write("Topic " + topic + ":\n");
+                for (int word = 0; word < ldaModel.vocabSize(); word++) {
+                    writer.write(" " + topics.apply(word, topic));
                 }
                 writer.write("\n");
-
             }
+            double perplexity = localModel.logPerplexity(corpus);
+            writer.write("Perplexity: " + perplexity);
         } catch (Exception e) {
-            // TODO: handle exception
         }
-
+        sc.stop();
     }
 }

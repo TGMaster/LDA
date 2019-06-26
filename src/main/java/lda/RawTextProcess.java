@@ -5,13 +5,16 @@
  */
 package lda;
 
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import org.apache.spark.SparkConf;
+import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.FlatMapFunction;
@@ -30,24 +33,32 @@ import util.Stopwords;
  *
  * @author 9999
  */
+class Content implements Function<String, List<String>>, Serializable {
+
+    public List<String> call(String content) throws Exception {
+        String[] string_arrays = content.toLowerCase().split("\\s");
+        return Arrays.asList(string_arrays);
+    }
+}
+
 public class RawTextProcess {
 
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        
+
         System.setProperty("hadoop.home.dir", "C:\\Spark\\");
 
         SparkConf conf = new SparkConf().setAppName("LDA Example");
         conf.set("spark.app.name", "My Spark App");
         conf.set("spark.master", "local[*]");
-        conf.set("spark.executor.memory", "16g");
+        conf.set("spark.executor.memory", "2g");
         conf.set("spark.ui.port", "36000");
         JavaSparkContext sc = new JavaSparkContext(conf);
         // Load and parse the data
         //	    String path = "/home/thuy/sample.txt";
-        String path = "src/main/resources/imdb_master.csv";
+        String path = "src/main/resources/data.csv";
         SQLContext sqlContext = new SQLContext(sc);
         Dataset<Row> dataSet = sqlContext.read().format("com.databricks.spark.csv").option("header", "true").load(path);
         dataSet = dataSet.select(
@@ -82,6 +93,7 @@ public class RawTextProcess {
         }
 
         JavaRDD<List<String>> corpuss = sc.parallelize(lists);
+
         List<Tuple2<String, Long>> termCounts = corpuss.flatMap(
                 new FlatMapFunction<List<String>, String>() {
             public Iterator<String> call(List<String> list) {
@@ -112,16 +124,41 @@ public class RawTextProcess {
             }
         });
 
-        int numStopwords = termCounts.size();
-        List<String> vocabArray = new ArrayList<String>();
+        int numStopwords = modifiableList.size();
+        List<String> vocabArray = new ArrayList<>();
         for (int i = 0; i < numStopwords - 1; i++) {
-            vocabArray.add(termCounts.get(i)._1);
+            vocabArray.add(modifiableList.get(i)._1);
         }
 
-        final HashMap<String, Long> vocab = new HashMap<String, Long>();
+        final HashMap<String, Long> dictionary = new HashMap<String, Long>();
         for (Tuple2<String, Long> item : sc.parallelize(vocabArray).zipWithIndex().collect()) {
-            vocab.put(item._1, item._2);
+            dictionary.put(item._1, item._2);
         }
+
+        JavaRDD<Tuple2<Long, Vector>> training = corpuss.zipWithIndex().map(
+                new Function<Tuple2<List<String>, Long>, Tuple2<Long, Vector>>() {
+            public Tuple2<Long, Vector> call(Tuple2<List<String>, Long> temp) {
+                HashMap<Long, Double> counts = new HashMap<>(0);
+                for (String item : temp._1) {
+                    if (dictionary.containsKey(item)) {
+                        Long idx = dictionary.get(item);
+                        if (!counts.containsKey(idx)) {
+                            counts.put(idx, 0.0);
+                        }
+                        counts.put(idx, 1.0);
+                    }
+                }
+                double[] value = new double[counts.size()];
+                int i = 0;
+                for (Long item : counts.keySet()) {
+                    value[i] = item + 0.0;
+                    i++;
+
+                }
+                return new Tuple2(temp._2, Vectors.dense(value));
+            }
+        }
+        );
 
         JavaRDD<Tuple2<Long, Vector>> documents = corpuss.zipWithIndex().map(
                 new Function<Tuple2<List<String>, Long>, Tuple2<Long, Vector>>() {
@@ -130,8 +167,8 @@ public class RawTextProcess {
             public Tuple2<Long, Vector> call(Tuple2<List<String>, Long> t) throws Exception {
                 HashMap<Long, Double> counts = new HashMap<Long, Double>(0);
                 for (String item : t._1) {
-                    if (vocab.containsKey(item)) {
-                        Long idx = vocab.get(item);
+                    if (dictionary.containsKey(item)) {
+                        Long idx = dictionary.get(item);
                         if (!counts.containsKey(idx)) {
                             counts.put(idx, 0.0);
                         }
@@ -140,11 +177,11 @@ public class RawTextProcess {
                 }
 
                 //					JavaRDD<Vector<Tuple2<Integer,Double>>> parsedData 
-                int[] key = new int[counts.size() + 1];
-                double[] value = new double[counts.size() + 1];
+                int[] key = new int[counts.size()];
+                double[] value = new double[counts.size()];
 
                 int i = 0;
-                ArrayList<Tuple2<Integer, Double>> c = new ArrayList<>();
+//                ArrayList<Tuple2<Integer, Double>> c = new ArrayList<>();
                 for (Long item : counts.keySet()) {
                     //						c.add(new Tuple2(item.intValue(), counts.get(item)));
                     key[i] = item.intValue();
@@ -152,7 +189,7 @@ public class RawTextProcess {
                     i++;
 
                 }
-                return new Tuple2(t._2, Vectors.sparse(vocab.size(), key, value));
+                return new Tuple2(t._2, Vectors.sparse(dictionary.size(), key, value));
             }
         }
         );
@@ -166,10 +203,13 @@ public class RawTextProcess {
 //		catch (Exception e) {
 //			// TODO: handle exception
 //		}
-        // 75% Train, 25% Test
-        JavaRDD<Tuple2<Long, Vector>>[] splits = documents.randomSplit(new double[]{0.25, 0.75});
-        splits[1].saveAsObjectFile("src/main/resources/documents/train");
-        splits[0].saveAsObjectFile("src/main/resources/documents/test");
+        // 80% Train, 20% Test
+        JavaRDD<Tuple2<Long, Vector>>[] splits = training.randomSplit(new double[]{0.8, 0.2});
+        documents.saveAsTextFile("src/main/resources/textfile");
+//        splits[0].saveAsObjectFile("src/main/resources/documents/train");
+//        splits[1].saveAsObjectFile("src/main/resources/documents/test");
+
+        sc.stop();
     }
-    
+
 }
