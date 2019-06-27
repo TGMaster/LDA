@@ -5,7 +5,11 @@
  */
 package lda;
 
+import java.io.BufferedWriter;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
 import java.io.Serializable;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -76,7 +80,7 @@ public class RawTextProcess {
 
         JavaRDD<List<String>> corpus = data.map(new Content());
         corpus.cache();
-        ArrayList<List<String>> lists = new ArrayList<List<String>>();
+        ArrayList<List<String>> lists = new ArrayList<>();
 
         for (List<String> item : corpus.collect()) {
             if (item.size() > 3) {
@@ -96,26 +100,30 @@ public class RawTextProcess {
 
         List<Tuple2<String, Long>> termCounts = corpuss.flatMap(
                 new FlatMapFunction<List<String>, String>() {
+            @Override
             public Iterator<String> call(List<String> list) {
                 return list.iterator();
             }
         })
                 .mapToPair(
                         new PairFunction<String, String, Long>() {
+                    @Override
                     public Tuple2<String, Long> call(String s) {
-                        return new Tuple2<String, Long>(s, 1L);
+                        return new Tuple2<>(s, 1L);
                     }
                 })
                 .reduceByKey(
                         new Function2<Long, Long, Long>() {
+                    @Override
                     public Long call(Long i1, Long i2) {
                         return i1 + i2;
                     }
                 })
                 .collect();
 
-        List<Tuple2<String, Long>> modifiableList = new ArrayList<Tuple2<String, Long>>(termCounts);
+        List<Tuple2<String, Long>> modifiableList = new ArrayList<>(termCounts);
 
+        // Sort the weight of words in descending order
         Collections.sort(modifiableList, new Comparator<Tuple2<String, Long>>() {
             @Override
             public int compare(Tuple2<String, Long> v1, Tuple2<String, Long> v2) {
@@ -130,42 +138,50 @@ public class RawTextProcess {
             vocabArray.add(modifiableList.get(i)._1);
         }
 
-        final HashMap<String, Long> dictionary = new HashMap<String, Long>();
+        final HashMap<String, Long> dictionary = new HashMap<>();
         for (Tuple2<String, Long> item : sc.parallelize(vocabArray).zipWithIndex().collect()) {
             dictionary.put(item._1, item._2);
         }
-
-        JavaRDD<Tuple2<Long, Vector>> training = corpuss.zipWithIndex().map(
-                new Function<Tuple2<List<String>, Long>, Tuple2<Long, Vector>>() {
-            public Tuple2<Long, Vector> call(Tuple2<List<String>, Long> temp) {
-                HashMap<Long, Double> counts = new HashMap<>(0);
-                for (String item : temp._1) {
-                    if (dictionary.containsKey(item)) {
-                        Long idx = dictionary.get(item);
-                        if (!counts.containsKey(idx)) {
-                            counts.put(idx, 0.0);
+        try (Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("output.txt"), "utf-8"))) {
+            JavaRDD<Tuple2<Long, Vector>> training = corpuss.zipWithIndex().map(
+                    new Function<Tuple2<List<String>, Long>, Tuple2<Long, Vector>>() {
+                public Tuple2<Long, Vector> call(Tuple2<List<String>, Long> temp) {
+                    HashMap<Long, Double> counts = new HashMap<>(0);
+                    String abc = "";
+                    for (String item : temp._1) {
+                        abc += item + " ";
+                        if (dictionary.containsKey(item)) {
+                            Long idx = dictionary.get(item);
+                            if (!counts.containsKey(idx)) {
+                                counts.put(idx, 0.0);
+                            }
+                            counts.put(idx, 1.0);
                         }
-                        counts.put(idx, 1.0);
                     }
-                }
-                double[] value = new double[counts.size()];
-                int i = 0;
-                for (Long item : counts.keySet()) {
-                    value[i] = item + 0.0;
-                    i++;
+                    try {
+                        writer.write(abc);
+                    } catch (Exception e) {
+                    }
+                    double[] value = new double[counts.size()];
+                    int i = 0;
+                    for (Long item : counts.keySet()) {
+                        value[i] = item + 0.0;
+                        i++;
 
+                    }
+                    return new Tuple2(temp._2, Vectors.dense(value));
                 }
-                return new Tuple2(temp._2, Vectors.dense(value));
             }
+            );
+        } catch (Exception e) {
         }
-        );
 
         JavaRDD<Tuple2<Long, Vector>> documents = corpuss.zipWithIndex().map(
                 new Function<Tuple2<List<String>, Long>, Tuple2<Long, Vector>>() {
             @SuppressWarnings("unchecked")
             @Override
             public Tuple2<Long, Vector> call(Tuple2<List<String>, Long> t) throws Exception {
-                HashMap<Long, Double> counts = new HashMap<Long, Double>(0);
+                HashMap<Long, Double> counts = new HashMap<>();
                 for (String item : t._1) {
                     if (dictionary.containsKey(item)) {
                         Long idx = dictionary.get(item);
@@ -204,7 +220,7 @@ public class RawTextProcess {
 //			// TODO: handle exception
 //		}
         // 80% Train, 20% Test
-        JavaRDD<Tuple2<Long, Vector>>[] splits = training.randomSplit(new double[]{0.8, 0.2});
+        JavaRDD<Tuple2<Long, Vector>>[] splits = documents.randomSplit(new double[]{0.8, 0.2});
         documents.saveAsTextFile("src/main/resources/textfile");
 //        splits[0].saveAsObjectFile("src/main/resources/documents/train");
 //        splits[1].saveAsObjectFile("src/main/resources/documents/test");
