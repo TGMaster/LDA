@@ -25,6 +25,9 @@ import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFunction;
+import org.apache.spark.mllib.feature.HashingTF;
+import org.apache.spark.mllib.feature.IDF;
+import org.apache.spark.mllib.feature.IDFModel;
 import org.apache.spark.mllib.linalg.Vector;
 import org.apache.spark.mllib.linalg.Vectors;
 import org.apache.spark.sql.Dataset;
@@ -68,6 +71,7 @@ public class RawTextProcess {
         dataSet = dataSet.select(
                 dataSet.col("review")
         );
+
         JavaRDD<String> data = dataSet.toJavaRDD().map(
                 new Function<Row, String>() {
             @Override
@@ -80,6 +84,7 @@ public class RawTextProcess {
 
         JavaRDD<List<String>> corpus = data.map(new Content());
         corpus.cache();
+
         ArrayList<List<String>> lists = new ArrayList<>();
 
         for (List<String> item : corpus.collect()) {
@@ -97,6 +102,21 @@ public class RawTextProcess {
         }
 
         JavaRDD<List<String>> corpuss = sc.parallelize(lists);
+
+        HashingTF hashTF = new HashingTF();
+        JavaRDD<Vector> tf = hashTF.transform(corpuss);
+        IDFModel idf = new IDF().fit(tf);
+        JavaRDD<Vector> tfidf = idf.transform(tf);
+        // Index documents with unique IDs
+        JavaRDD<Tuple2<Long, Vector>> corpus2 = tfidf.zipWithIndex().map(
+                new Function<Tuple2<Vector, Long>, Tuple2<Long, Vector>>() {
+            public Tuple2<Long, Vector> call(Tuple2<Vector, Long> doc_id) {
+                return doc_id.swap();
+            }
+        }
+        );
+        
+        corpus2.saveAsTextFile("src/main/resources/corpus2");
 
         List<Tuple2<String, Long>> termCounts = corpuss.flatMap(
                 new FlatMapFunction<List<String>, String>() {
@@ -141,39 +161,6 @@ public class RawTextProcess {
         final HashMap<String, Long> dictionary = new HashMap<>();
         for (Tuple2<String, Long> item : sc.parallelize(vocabArray).zipWithIndex().collect()) {
             dictionary.put(item._1, item._2);
-        }
-        try (Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("output.txt"), "utf-8"))) {
-            JavaRDD<Tuple2<Long, Vector>> training = corpuss.zipWithIndex().map(
-                    new Function<Tuple2<List<String>, Long>, Tuple2<Long, Vector>>() {
-                public Tuple2<Long, Vector> call(Tuple2<List<String>, Long> temp) {
-                    HashMap<Long, Double> counts = new HashMap<>(0);
-                    String abc = "";
-                    for (String item : temp._1) {
-                        abc += item + " ";
-                        if (dictionary.containsKey(item)) {
-                            Long idx = dictionary.get(item);
-                            if (!counts.containsKey(idx)) {
-                                counts.put(idx, 0.0);
-                            }
-                            counts.put(idx, 1.0);
-                        }
-                    }
-                    try {
-                        writer.write(abc);
-                    } catch (Exception e) {
-                    }
-                    double[] value = new double[counts.size()];
-                    int i = 0;
-                    for (Long item : counts.keySet()) {
-                        value[i] = item + 0.0;
-                        i++;
-
-                    }
-                    return new Tuple2(temp._2, Vectors.dense(value));
-                }
-            }
-            );
-        } catch (Exception e) {
         }
 
         JavaRDD<Tuple2<Long, Vector>> documents = corpuss.zipWithIndex().map(
@@ -220,10 +207,10 @@ public class RawTextProcess {
 //			// TODO: handle exception
 //		}
         // 80% Train, 20% Test
-        JavaRDD<Tuple2<Long, Vector>>[] splits = documents.randomSplit(new double[]{0.8, 0.2});
-        documents.saveAsTextFile("src/main/resources/textfile");
-//        splits[0].saveAsObjectFile("src/main/resources/documents/train");
-//        splits[1].saveAsObjectFile("src/main/resources/documents/test");
+        JavaRDD<Tuple2<Long, Vector>>[] splits = corpus2.randomSplit(new double[]{0.8, 0.2});
+        documents.saveAsTextFile("src/main/resources/corpus1");
+        splits[0].saveAsObjectFile("src/main/resources/documents/train");
+        splits[1].saveAsObjectFile("src/main/resources/documents/test");
 
         sc.stop();
     }
