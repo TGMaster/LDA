@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package lda;
+package lda.mllib;
 
 import java.io.BufferedWriter;
 import java.io.FileOutputStream;
@@ -26,8 +26,6 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.mllib.feature.HashingTF;
-import org.apache.spark.mllib.feature.IDF;
-import org.apache.spark.mllib.feature.IDFModel;
 import org.apache.spark.mllib.linalg.Vector;
 import org.apache.spark.mllib.linalg.Vectors;
 import org.apache.spark.sql.Dataset;
@@ -103,12 +101,13 @@ public class RawTextProcess {
 
         JavaRDD<List<String>> corpuss = sc.parallelize(lists);
 
-        HashingTF hashTF = new HashingTF();
+        HashingTF hashTF = new HashingTF(200000);
         JavaRDD<Vector> tf = hashTF.transform(corpuss);
-        IDFModel idf = new IDF().fit(tf);
-        JavaRDD<Vector> tfidf = idf.transform(tf);
+//        IDFModel idf = new IDF().fit(tf);
+//        JavaRDD<Vector> tfidf = idf.transform(tf);
+
         // Index documents with unique IDs
-        JavaRDD<Tuple2<Long, Vector>> corpus2 = tfidf.zipWithIndex().map(
+        JavaRDD<Tuple2<Long, Vector>> corpus2 = tf.zipWithIndex().map(
                 new Function<Tuple2<Vector, Long>, Tuple2<Long, Vector>>() {
             public Tuple2<Long, Vector> call(Tuple2<Vector, Long> doc_id) {
                 return doc_id.swap();
@@ -116,6 +115,7 @@ public class RawTextProcess {
         }
         );
         
+        corpuss.saveAsTextFile("src/main/resources/corpus");
         corpus2.saveAsTextFile("src/main/resources/corpus2");
 
         List<Tuple2<String, Long>> termCounts = corpuss.flatMap(
@@ -207,7 +207,7 @@ public class RawTextProcess {
 //			// TODO: handle exception
 //		}
         // 80% Train, 20% Test
-        JavaRDD<Tuple2<Long, Vector>>[] splits = corpus2.randomSplit(new double[]{0.8, 0.2});
+        JavaRDD<Tuple2<Long, Vector>>[] splits = documents.randomSplit(new double[]{0.8, 0.2},1L);
         documents.saveAsTextFile("src/main/resources/corpus1");
         splits[0].saveAsObjectFile("src/main/resources/documents/train");
         splits[1].saveAsObjectFile("src/main/resources/documents/test");

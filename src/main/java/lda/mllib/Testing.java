@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package lda;
+package lda.mllib;
 
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -32,7 +32,7 @@ public class Testing {
         SparkConf conf = new SparkConf().setAppName("LDA Example");
         conf.set("spark.app.name", "My Spark App");
         conf.set("spark.master", "local[*]");
-        conf.set("spark.executor.memory", "6g");
+        conf.set("spark.executor.memory", "2g");
         conf.set("spark.ui.port", "36000");
         JavaSparkContext sc = new JavaSparkContext(conf);
 

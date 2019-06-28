@@ -30,8 +30,6 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.ml.clustering.DistributedLDAModel;
 import org.apache.spark.ml.clustering.LDA;
 import org.apache.spark.ml.clustering.LDAModel;
-import org.apache.spark.ml.clustering.LocalLDAModel;
-import org.apache.spark.mllib.linalg.Vector;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
@@ -58,7 +56,7 @@ public class LibSVM {
         // $example on$
         // Loads data.
         Dataset<Row> dataset = spark.read().format("libsvm")
-                .load("src/main/resources/sample_lda_libsvm_data.txt");
+                .load("src/main/resources/sample_libsvm.txt");
         
         JavaRDD<Row> data = dataset.toJavaRDD();
         data.saveAsTextFile("src/main/resources/libsvm");
@@ -66,8 +64,6 @@ public class LibSVM {
         // Trains a LDA model.
         LDA lda = new LDA().setK(10).setMaxIter(10);
         LDAModel model = lda.fit(dataset);
-        DistributedLDAModel distLDA = (DistributedLDAModel) model;
-        LocalLDAModel localLDA = distLDA.toLocal();
 
         double ll = model.logLikelihood(dataset);
         double lp = model.logPerplexity(dataset);

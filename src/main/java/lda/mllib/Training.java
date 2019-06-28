@@ -1,4 +1,4 @@
-package lda;
+package lda.mllib;
 
 import scala.Tuple2;
 import org.apache.spark.mllib.clustering.DistributedLDAModel;
