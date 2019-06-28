@@ -38,12 +38,9 @@ public class Train {
 
         // Loads processed data.
         Dataset<Row> dataset = spark.read()
-                .json("dataset");
+                .load("dataset");
         Dataset<Row>[] splits = dataset.randomSplit(new double[]{0.8, 0.2}, 1L);
         Dataset<Row> train = splits[0];
-        
-        JavaRDD<Row> a = train.select(train.col("vector")).toJavaRDD();
-        a.saveAsTextFile("test");
         
         // LDA Algorithms
         LDAModel ldaModel = new LDA()

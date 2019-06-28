@@ -9,8 +9,6 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
-import org.apache.spark.ml.clustering.LDA;
-import org.apache.spark.ml.clustering.LDAModel;
 import org.apache.spark.ml.feature.CountVectorizer;
 import org.apache.spark.ml.feature.CountVectorizerModel;
 import org.apache.spark.sql.Dataset;
@@ -51,6 +49,7 @@ public class Preprocess {
                 .option("header", "true")
                 .load("src/main/resources/data.csv");
 
+        // Tokenizer
         List<String> dataList = dataset.select(dataset.col("review")).as(Encoders.STRING()).collectAsList();
         List<List<String>> lists = new ArrayList<>();
         for (String t : dataList) {
@@ -58,6 +57,7 @@ public class Preprocess {
             lists.add(Arrays.asList(temp));
         }
 
+        // Remove stop words
         List<Row> rows = new ArrayList<>();
         for (List<String> item : lists) {
             if (item.size() >= 3) {
@@ -82,6 +82,7 @@ public class Preprocess {
 //        JavaRDD<Row> a = newData.toJavaRDD();
 //        a.saveAsTextFile("src/main/resources/test");
 
+        // Index word
         CountVectorizerModel vectorizer = new CountVectorizer()
                 .setInputCol("reviews")
                 .setOutputCol("vector")
@@ -92,7 +93,7 @@ public class Preprocess {
         newData = vectorizer.transform(newData);
         
         // Save dataset
-        newData.write().json("dataset");
+        newData.write().save("dataset");
         spark.stop();
     }
 

@@ -32,8 +32,7 @@ public class Test {
 
         // Loads processed data.
         Dataset<Row> dataset = spark.read()
-                .format("json")
-                .load("dataset.json");
+                .load("dataset");
         Dataset<Row>[] splits = dataset.randomSplit(new double[]{0.8, 0.2}, 1L);
         Dataset<Row> test = splits[1];
         
