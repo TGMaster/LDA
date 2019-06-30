@@ -5,13 +5,17 @@
  */
 package lda.ml;
 
-import java.io.Serializable;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.LinkedList;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.spark.ml.feature.CountVectorizer;
 import org.apache.spark.ml.feature.CountVectorizerModel;
+import org.apache.spark.ml.feature.Tokenizer;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.Row;
@@ -25,12 +29,20 @@ import util.Stopwords;
  *
  * @author S410U
  */
-class Review implements Serializable {
-
-    List<String> review;
-}
-
 public class Preprocess {
+
+    public static void write(String[] x) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("vocabulary.txt"))) {
+            writer.write(x.length+"\n");
+            for (String s : x) {
+                writer.write(s);
+                writer.newLine();
+            }
+            writer.flush();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
 
     /**
      * @param args the command line arguments
@@ -49,7 +61,7 @@ public class Preprocess {
         Logger.getRootLogger().setLevel(Level.ERROR);
 
         // Loads raw data.
-        Dataset<Row> dataset = spark.read()
+        Dataset<Row> ds = spark.read()
                 .format("csv")
                 .option("header", "true")
                 .load("src/main/resources/data.csv");
@@ -57,31 +69,20 @@ public class Preprocess {
 //                .json("src/main/resources/Books_5.json");
 
         // Store in Memory and disk
-        dataset.persist(StorageLevel.MEMORY_AND_DISK());
+        ds.persist(StorageLevel.MEMORY_AND_DISK());
+        ds = ds.filter(ds.col("review").isNotNull());
+        ds.printSchema();
 
-        dataset.printSchema();
-
-        // Creates a temporary view using the DataFrame
-//        dataset.createOrReplaceTempView("bookReview");
-        dataset.createOrReplaceTempView("movieReview");
-
-        Dataset<Row> ds = spark.sql("SELECT * FROM movieReview WHERE review is NOT NULL AND review <> '' ");
-//        Dataset<Row> reviewText = spark.sql("SELECT reviewText,summary FROM bookReview WHERE reviewText is NOT NULL AND reviewText <> ''");
-//        reviewText.select(dataset.col("reviewText")).show(false);
-//        reviewText.select(dataset.col("summary")).show(false);
-
-//        Dataset<Row>[] listOfData = reviewText.randomSplit(new double[]{0.01,0.8}, 1L);
-//        for (int i = 0; i < listOfData.length; i++) {
-//            listOfData[i].select(dataset.col("reviewText")).show(false);
-//            System.out.println("Size = " + listOfData[i].count());
-//        }
-//        System.out.println("Size = " + listOfData[0].count());
-
+//        // Tokenizer
+//        Tokenizer tokenizer = new Tokenizer()
+//                .setInputCol("review")
+//                .setOutputCol("tokens");
+//        ds = tokenizer.transform(ds);
 
         // Tokenizer and Remove stop words
         LinkedList<Row> rows = new LinkedList<>();
-        List<String> dataList = ds.select(dataset.col("review")).as(Encoders.STRING()).collectAsList();
-        
+        List<String> dataList = ds.select(ds.col("review")).as(Encoders.STRING()).collectAsList();
+
         for (String t : dataList) {
             String[] temp = t.toLowerCase().split("\\s");
             LinkedList<String> filtered = new LinkedList<>();
@@ -94,7 +95,6 @@ public class Preprocess {
             Row row = RowFactory.create(filtered);
             rows.add(row);
         }
-
 
         StructType schema = new StructType(new StructField[]{
             new StructField("reviews", new ArrayType(DataTypes.StringType, true), false, Metadata.empty())
@@ -117,8 +117,12 @@ public class Preprocess {
 
         newData.show(false);
         newData.printSchema();
+
+        String[] vocabulary = vectorizer.vocabulary();
+        write(vocabulary);
+
         // Save dataset
-        ds.write().save("dataset");
+        newData.write().save("dataset");
         spark.stop();
     }
 
