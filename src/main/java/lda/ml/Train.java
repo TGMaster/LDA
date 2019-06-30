@@ -5,22 +5,23 @@
  */
 package lda.ml;
 
-import java.io.IOException;
-import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.ml.clustering.LDA;
 import org.apache.spark.ml.clustering.LDAModel;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.apache.spark.storage.StorageLevel;
 
 /**
  *
  * @author TienTran
  */
 public class Train {
-    
-    public static final int NUM_OF_TOPICS = 3;
-    public static final int MAX_ITERATIONS = 50;
+
+    public static final int K = 3;
+    public static final int MAX_ITERATIONS = 100;
     public static final long SEED = 1L;
 
     /**
@@ -33,8 +34,11 @@ public class Train {
                 .builder()
                 .appName("JavaLDAExample")
                 .config("spark.master", "local[*]")
-                .config("spark.executor.memory", "4g")
+                .config("spark.executor.memory", "8g")
                 .getOrCreate();
+
+        // Hide spark logging
+        Logger.getRootLogger().setLevel(Level.ERROR);
 
         // Loads processed data.
         Dataset<Row> dataset = spark.read()
@@ -42,19 +46,22 @@ public class Train {
         Dataset<Row>[] splits = dataset.randomSplit(new double[]{0.8, 0.2}, 1L);
         Dataset<Row> train = splits[0];
         
+        // Store in Memory and disk
+        train.persist(StorageLevel.MEMORY_AND_DISK());
+
         // LDA Algorithms
         LDAModel ldaModel = new LDA()
-                .setK(NUM_OF_TOPICS)
+                .setK(K)
                 .setMaxIter(MAX_ITERATIONS)
                 .setSeed(SEED)
                 .setFeaturesCol("vector")
                 .fit(train);
-        
-        try {
-            ldaModel.save("LDAmodel");
-        } catch (IOException ex) {
-            System.err.println(ex);
-        }
+
+//        try {
+//            ldaModel.save("LDAmodel");
+//        } catch (IOException ex) {
+//            ex.printStackTrace();
+//        }
 
         double ll = ldaModel.logLikelihood(train);
         double lp = ldaModel.logPerplexity(train);
@@ -62,14 +69,10 @@ public class Train {
         System.out.println("The upper bound on perplexity: " + lp);
 
         // Describe topics.
-        Dataset<Row> topics = ldaModel.describeTopics(10);
+        Dataset<Row> topics = ldaModel.describeTopics(20);
         System.out.println("The topics described by their top-weighted terms:");
         topics.show(false);
 
-        // Shows the result.
-        Dataset<Row> transformed = ldaModel.transform(train);
-        transformed.show(false);
-        
         // Stop Spark Session
         spark.stop();
     }

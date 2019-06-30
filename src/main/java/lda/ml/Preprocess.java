@@ -7,8 +7,9 @@ package lda.ml;
 
 import java.io.Serializable;
 import java.util.List;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.LinkedList;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.apache.spark.ml.feature.CountVectorizer;
 import org.apache.spark.ml.feature.CountVectorizerModel;
 import org.apache.spark.sql.Dataset;
@@ -17,6 +18,7 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.*;
+import org.apache.spark.storage.StorageLevel;
 import util.Stopwords;
 
 /**
@@ -40,38 +42,59 @@ public class Preprocess {
                 .builder()
                 .appName("JavaLDAExample")
                 .config("spark.master", "local[*]")
-                .config("spark.executor.memory", "4g")
+                .config("spark.executor.memory", "8g")
                 .getOrCreate();
+
+        // Hide spark logging
+        Logger.getRootLogger().setLevel(Level.ERROR);
 
         // Loads raw data.
         Dataset<Row> dataset = spark.read()
                 .format("csv")
                 .option("header", "true")
                 .load("src/main/resources/data.csv");
+//        Dataset<Row> dataset = spark.read()
+//                .json("src/main/resources/Books_5.json");
 
-        // Tokenizer
-        List<String> dataList = dataset.select(dataset.col("review")).as(Encoders.STRING()).collectAsList();
-        List<List<String>> lists = new ArrayList<>();
+        // Store in Memory and disk
+        dataset.persist(StorageLevel.MEMORY_AND_DISK());
+
+        dataset.printSchema();
+
+        // Creates a temporary view using the DataFrame
+//        dataset.createOrReplaceTempView("bookReview");
+        dataset.createOrReplaceTempView("movieReview");
+
+        Dataset<Row> ds = spark.sql("SELECT * FROM movieReview WHERE review is NOT NULL AND review <> '' ");
+//        Dataset<Row> reviewText = spark.sql("SELECT reviewText,summary FROM bookReview WHERE reviewText is NOT NULL AND reviewText <> ''");
+//        reviewText.select(dataset.col("reviewText")).show(false);
+//        reviewText.select(dataset.col("summary")).show(false);
+
+//        Dataset<Row>[] listOfData = reviewText.randomSplit(new double[]{0.01,0.8}, 1L);
+//        for (int i = 0; i < listOfData.length; i++) {
+//            listOfData[i].select(dataset.col("reviewText")).show(false);
+//            System.out.println("Size = " + listOfData[i].count());
+//        }
+//        System.out.println("Size = " + listOfData[0].count());
+
+
+        // Tokenizer and Remove stop words
+        LinkedList<Row> rows = new LinkedList<>();
+        List<String> dataList = ds.select(dataset.col("review")).as(Encoders.STRING()).collectAsList();
+        
         for (String t : dataList) {
             String[] temp = t.toLowerCase().split("\\s");
-            lists.add(Arrays.asList(temp));
+            LinkedList<String> filtered = new LinkedList<>();
+            for (String s : temp) {
+                if (s.length() >= 3 && s.matches("[A-Za-z]+")
+                        && !Stopwords.isStemmedStopword(s) && !Stopwords.isStopword(s)) {
+                    filtered.add(s);
+                }
+            }
+            Row row = RowFactory.create(filtered);
+            rows.add(row);
         }
 
-        // Remove stop words
-        List<Row> rows = new ArrayList<>();
-        for (List<String> item : lists) {
-            if (item.size() >= 3) {
-                List<String> temp = new ArrayList<>();
-                for (String s : item) {
-                    if (s.length() >= 3 && s.matches("[A-Za-z]+")
-                            && !Stopwords.isStemmedStopword(s) && !Stopwords.isStopword(s)) {
-                        temp.add(s);
-                    }
-                }
-                Row row = RowFactory.create(temp);
-                rows.add(row);
-            }
-        }
 
         StructType schema = new StructType(new StructField[]{
             new StructField("reviews", new ArrayType(DataTypes.StringType, true), false, Metadata.empty())
@@ -79,8 +102,8 @@ public class Preprocess {
 
         Dataset<Row> newData = spark.createDataFrame(rows, schema);
 
-//        JavaRDD<Row> a = newData.toJavaRDD();
-//        a.saveAsTextFile("src/main/resources/test");
+        // Store in memory
+        newData.cache();
 
         // Index word
         CountVectorizerModel vectorizer = new CountVectorizer()
@@ -91,9 +114,11 @@ public class Preprocess {
                 .setMinDF(2) //Minumum number of document a term must appear
                 .fit(newData);
         newData = vectorizer.transform(newData);
-        
+
+        newData.show(false);
+        newData.printSchema();
         // Save dataset
-        newData.write().save("dataset");
+        ds.write().save("dataset");
         spark.stop();
     }
 

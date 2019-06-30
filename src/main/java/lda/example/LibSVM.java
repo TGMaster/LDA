@@ -54,9 +54,9 @@ public class LibSVM {
                 .getOrCreate();
 
         // $example on$
+        
         // Loads data.
-        Dataset<Row> dataset = spark.read().format("libsvm")
-                .load("src/main/resources/sample_libsvm.txt");
+        Dataset<Row> dataset = spark.read().format("libsvm").load("src/main/resources/sample_libsvm.txt");
         
         JavaRDD<Row> data = dataset.toJavaRDD();
         data.saveAsTextFile("src/main/resources/libsvm");

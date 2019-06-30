@@ -5,11 +5,14 @@
  */
 package lda.ml;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.apache.spark.ml.clustering.LDAModel;
 import org.apache.spark.ml.clustering.LocalLDAModel;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
+import org.apache.spark.storage.StorageLevel;
 
 /**
  *
@@ -30,12 +33,18 @@ public class Test {
                 .config("spark.executor.memory", "4g")
                 .getOrCreate();
 
+        // Hide spark logging
+        Logger.getRootLogger().setLevel(Level.ERROR);
+
         // Loads processed data.
         Dataset<Row> dataset = spark.read()
                 .load("dataset");
         Dataset<Row>[] splits = dataset.randomSplit(new double[]{0.8, 0.2}, 1L);
         Dataset<Row> test = splits[1];
         
+        // Store in Memory and disk
+        test.persist(StorageLevel.MEMORY_AND_DISK());
+
         LocalLDAModel ldaModel = LocalLDAModel.load("LDAmodel");
         double ll = ldaModel.logLikelihood(test);
         double lp = ldaModel.logPerplexity(test);
@@ -50,9 +59,9 @@ public class Test {
         // Shows the result.
         Dataset<Row> transformed = ldaModel.transform(test);
         transformed.show(false);
-        
+
         // Stop Spark Session
         spark.stop();
     }
-    
+
 }
