@@ -9,22 +9,31 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import org.apache.spark.ml.clustering.LDA;
-import org.apache.spark.ml.clustering.LDAModel;
-import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Row;
-import org.apache.spark.sql.SparkSession;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.spark.ml.feature.IndexToString;
-import org.apache.spark.sql.api.java.UDF1;
-import org.apache.spark.sql.expressions.UserDefinedFunction;
-import org.apache.spark.sql.functions;
+import org.apache.spark.api.java.function.MapFunction;
+import org.apache.spark.ml.clustering.LDA;
+import org.apache.spark.ml.clustering.LDAModel;
+import org.apache.spark.ml.feature.CountVectorizer;
+import org.apache.spark.ml.feature.CountVectorizerModel;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Encoder;
+import org.apache.spark.sql.Row;
+import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.Encoders;
+import org.apache.spark.sql.RowFactory;
+import org.apache.spark.sql.catalyst.encoders.RowEncoder;
 import org.apache.spark.sql.types.ArrayType;
 import org.apache.spark.sql.types.DataTypes;
+import org.apache.spark.sql.types.Metadata;
+import org.apache.spark.sql.types.StructField;
+import org.apache.spark.sql.types.StructType;
 import org.apache.spark.storage.StorageLevel;
-import scala.collection.mutable.Seq;
-import scala.collection.mutable.WrappedArray;
+import util.ToScala;
 
 /**
  *
@@ -32,24 +41,8 @@ import scala.collection.mutable.WrappedArray;
  */
 public class Train {
 
-    public static String[] read() {
-        String[] x = null;
-        try (BufferedReader br = Files.newBufferedReader(Paths.get("vocabulary.txt"))) {
-            String line = br.readLine();
-            x = new String[Integer.parseInt(line)];
-            int i = 0;
-            while ((line = br.readLine()) != null) {
-                x[i] = line;
-                i++;
-            }
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
-        return x;
-    }
-
     public static final int K = 20;
-    public static final long SEED = 1L;
+    public static final long SEED = 1435876747;
 
     /**
      * @param args the command line arguments
@@ -66,58 +59,77 @@ public class Train {
 
         // Hide spark logging
         Logger.getRootLogger().setLevel(Level.ERROR);
-
+        
+        
         // Loads processed data.
-        Dataset<Row> dataset = spark.read()
-                .load("dataset");
-        Dataset<Row>[] splits = dataset.randomSplit(new double[]{0.8, 0.2}, 1L);
-        Dataset<Row> train = splits[0];
+        Dataset<Row> dataset = spark.read().load("dataset");
 
-        // Store in Memory and disk
+        // Index word
+        CountVectorizerModel vectorizer = new CountVectorizer()
+                .setInputCol("reviews")
+                .setOutputCol("vector")
+                .setVocabSize(1500000) //Maximum size of vocabulary
+                .setMinTF(2) //Minimum Term Frequency to be included in vocabulary
+                .setMinDF(2) //Minumum number of document a term must appear
+                .fit(dataset);
+        dataset = vectorizer.transform(dataset);
+
+        dataset.show(false);
+        dataset.printSchema();
+
+        Dataset<Row>[] splits = dataset.randomSplit(new double[]{0.8, 0.2}, SEED);
+        Dataset<Row> train = splits[0];// Store in Memory and disk
         train.persist(StorageLevel.MEMORY_AND_DISK());
 
         // LDA Algorithms
         LDAModel ldaModel = new LDA()
                 .setK(K)
+                .setMaxIter(3)
                 .setSeed(SEED)
                 .setFeaturesCol("vector")
                 .fit(train);
 
-//        try {
-//            ldaModel.save("LDAmodel");
-//        } catch (IOException ex) {
-//            ex.printStackTrace();
-//        }
+//        Pipeline pipeLine = new Pipeline().setStages(new PipelineStage[]{tokenizer, stopwordsRemover, vectorizer});
+        try {
+            ldaModel.write().overwrite().save("model");
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+
         double ll = ldaModel.logLikelihood(train);
         double lp = ldaModel.logPerplexity(train);
         System.out.println("The lower bound on the log likelihood of the entire corpus: " + ll);
         System.out.println("The upper bound on perplexity: " + lp);
 
         // Describe topics.
-        Dataset<Row> topics = ldaModel.describeTopics(20);
+        Dataset<Row> topics = ldaModel.describeTopics(5);
         System.out.println("The topics described by their top-weighted terms:");
         topics.show(false);
-        topics.printSchema();
 
-        String[] vocabulary = read();
-        IndexToString index2string = new IndexToString().setLabels(vocabulary).setInputCol("termIndices").setOutputCol("terms");
-        index2string.transform(topics).show(false);
-        
-        UserDefinedFunction converter = functions.udf(new UDF1<WrappedArray<Integer>, String[]>() {
-            @Override
-            public String[] call(WrappedArray<Integer> a) {
-                
-                return null;
+        String[] vocabulary = vectorizer.vocabulary();
+        StructType array = new StructType(new StructField[]{
+            new StructField("terms", new ArrayType(DataTypes.StringType, true), false, Metadata.empty())
+        });
+
+        Encoder<Row> encoder = RowEncoder.apply(array);
+        Dataset<String> topicsString = topics.select(topics.col("termIndices")).as(Encoders.STRING());
+
+        Dataset<Row> result = topicsString.map((MapFunction<String, Row>) row -> {
+            String[] topicIndices = row.split(",");
+            LinkedList<String> rs = new LinkedList<>();
+            for (String s : topicIndices) {
+                s = s.replaceAll("[^0-9]+", "");
+                rs.add(vocabulary[Integer.parseInt(s)]);
             }
-        }, new ArrayType(DataTypes.StringType, false));
-        UserDefinedFunction termsIdx2Str = functions.udf(
-                (Seq<Integer>) termIndieces -> termIndices.map(idx -> vocabulary(idx))
-        );
-//        UserDefinedFunction = {
-//            udf((indices: mutable.WrappedArray[Int]
-//            ) => indices.map(values(_))
-//        
-//        
+            Row r = RowFactory.create(ToScala.toScalaList(rs));
+            return r;
+        }, encoder);
+
+        result = result.join(topics);
+        result.show(false);
+
+//        result = result.join(topics, topics.col("termWeights"));
+//        result.write().mode(SaveMode.Append).json("result");
         // Stop Spark Session
         spark.stop();
     }
