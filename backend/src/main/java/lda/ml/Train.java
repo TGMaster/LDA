@@ -84,7 +84,7 @@ public class Train {
         // LDA Algorithms
         LDAModel ldaModel = new LDA()
                 .setK(K)
-                .setMaxIter(3)
+                .setMaxIter(100)
                 .setSeed(SEED)
                 .setFeaturesCol("vector")
                 .fit(train);

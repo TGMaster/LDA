@@ -1,0 +1,10 @@
+<div class="modal-header">
+	<h4 class="modal-title" ng-bind="title"></h4>
+</div>
+<div class="modal-body">
+	<p ng-bind="message"></p>
+</div>
+<div class="modal-footer">
+	<button ng-click="onDismiss()" ng-bind="opts.lblDismiss" type="button" class="btn btn-warning" data-dismiss="modal"></button>
+	<button ng-click="onAccept()" ng-bind="opts.lblAccept" type="button" class="btn btn-primary"></button>
+</div>

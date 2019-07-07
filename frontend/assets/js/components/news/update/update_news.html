@@ -1,0 +1,57 @@
+<header class="page-header section-dark page-header-small" style="background-image: url('assets/img/login-image.jpg');">
+    <div class="filter"></div>
+</header>
+<div class="main">
+    <div class="section landing-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-8 ml-auto mr-auto">
+                    <h2 class="text-center newfont">Chỉnh sửa tin tức</h2>
+                    <form class="contact-form" ng-submit="updateNews()" enctype="multipart/form-data" name="editNewsForm">
+
+                        <!-- Title -->
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label for="title">Tiêu đề</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" ng-model="newsInfo.newsTitle" name="title" id="title" required/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Content -->
+                        <div class="form-group">
+                            <label for="info">Nội dung</label>
+                            <textarea class="form-control" rows="15" ng-model="newsInfo.newsInfo" name="info" id="info" required></textarea>
+                        </div>
+
+                        <!-- File -->
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label for="file">Hình ảnh</label>
+                                    <img ng-src="{{newsInfo.newsImage}}" width="200" height="200" style="padding:16px; border:1px solid #f1f1f1; margin:16px;" />
+                                    <div class="input-group">
+                                        <input type="file" class="form-control" name="file" id="file" file-input="files" onchange="angular.element(this).scope().readFileName()"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="row">
+                            <div class="col-lg-12 text-right">
+                                <button class="btn btn-warning btn-fill" ng-click="goBack()"><i class="fa fa-times"></i> Hủy</button>
+                                <button class="btn btn-info btn-fill" ng-disabled="submitting || origin" ng-hide="submitting" type="submit"><i class="fa fa-floppy-o"></i> Lưu</button>
+                                <button class="btn btn-info btn-fill" disabled ng-show="submitting"><i class="fa fa-floppy-o"></i> Đang lưu</button>
+                                <button class="btn btn-danger btn-fill"  ng-click="confirmDeleteNews()"> <i class="fa fa-trash-o"></i> Xóa</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

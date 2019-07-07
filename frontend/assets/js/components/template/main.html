@@ -1,0 +1,83 @@
+<nav class="navbar navbar-expand-md fixed-top navbar-transparent" color-on-scroll="1">
+    <div class="container">
+        <div class="navbar-translate">
+            <button class="navbar-toggler navbar-toggler-right navbar-burger" type="button" data-toggle="collapse" data-target="#navbarToggler" aria-controls="navbarTogglerDemo02" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-bar"></span>
+                <span class="navbar-toggler-bar"></span>
+                <span class="navbar-toggler-bar"></span>
+            </button>
+            <a class="navbar-brand logo-container" ui-sref="news.list"><img src="assets/img/logo.png" class="logo"/> Việt Úc Entertainment</a>
+        </div>
+        <div class="collapse navbar-collapse" id="navbarToggler">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" rel="tooltip" title="Follow us on Twitter" data-placement="bottom" href="https://twitter.com/vietuctoancau" target="_blank">
+                        <i class="fa fa-twitter"></i>
+                        <p class="d-lg-none">Twitter</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" rel="tooltip" title="Like us on Facebook" data-placement="bottom" href="https://www.facebook.com/Vietuctoancau" target="_blank">
+                        <i class="fa fa-facebook-square"></i>
+                        <p class="d-lg-none">Facebook</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" rel="tooltip" title="Follow us on Pinterest" data-placement="bottom" href="https://www.pinterest.com/vietuctoancau" target="_blank">
+                        <i class="fa fa-pinterest"></i>
+                        <p class="d-lg-none">Pinterest</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" rel="tooltip" title="Subscribe us on Youtube" data-placement="bottom" href="https://www.youtube.com/channel/UCBMk6KuVPRwCay5Q0SC8mVA" target="_blank">
+                        <i class="fa fa-youtube"></i>
+                        <p class="d-lg-none">Youtube</p>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="wrapper">
+    <div ui-view></div>
+</div>
+
+<footer class="footer">
+    <div class="container">
+        <div class="row">
+            <nav class="footer-nav">
+                <ul>
+                    <li><a ui-sref="news.list">Trang chủ</a></li>
+                    <li><a href="http://baosankhau.vn">Tin tức</a></li>
+                    <li><a ui-sref="contact">Liên hệ</a></li>
+                    <li ng-if="!isLogin"><a data-toggle="modal" data-target="#login" class="fake-link">Đăng nhập</a></li>
+                    <li ng-if="isLogin"><a ui-sref="news.create">Đăng tin</a></li>
+                    <li ng-if="isLogin"><a class="fake-link" ng-click="logout()">Đăng xuất</a></li>
+                </ul>
+            </nav>
+            <div class="credits ml-auto">
+                <span class="copyright">
+                    © {{year}}, designed by <a href="https://github.com/TGMaster">Tiến Trần</a>
+                </span>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<div class="modal fade" id="login">
+    <div class="modal-dialog">
+        <div class="modal-content" id="login-content">
+            <div class="card card-register mr-auto ml-auto">
+                <h3 class="title">ĐĂNG NHẬP</h3>
+                <form class="register-form" ng-submit="loginUser()">
+                    <input type="text" class="form-control" placeholder="Tài khoản" ng-model="user.username"/>
+                    <input type="password" class="form-control" placeholder="Mật khẩu" ng-model="user.password"/>
+                    <button class="btn btn-danger btn-block btn-round" ng-hide="submitting" ng-disabled="submitting">Đăng nhập</button>
+                    <button class="btn btn-danger btn-block btn-round" disabled ng-show="submitting">Đang tải</button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>

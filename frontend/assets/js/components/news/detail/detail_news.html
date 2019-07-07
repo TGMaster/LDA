@@ -1,0 +1,60 @@
+<header class="page-header section-dark" style="background-image: url('assets/img/main.jpg');">
+    <div class="filter"></div>
+    <div class="content-center">
+        <div class="container">
+            <div class="title-brand">
+                <h1 class="presentation-title">VIET CAN STAR ENTERTAINMENT</h1>
+            </div>
+
+            <h2 class="presentation-subtitle text-center">Đêm hội doanh nhân và nghệ sĩ </h2>
+        </div>
+    </div>
+
+    <h6 class="category category-absolute">
+        <section id="scroll" class="scrolldown">
+            <a class="fake-link" ng-click="scrollTo('content')"><span></span></a>
+        </section>
+    </h6>
+</header>
+
+<!-- ##### Post Details Title Area Start ##### -->
+<div class="post-details-title-area clearfix" id="content">
+    <div class="container-fluid h-100">
+        <div class="row h-100 align-items-center">
+            <div class="col-12">
+                <!-- Post Content -->
+                <div class="post-content mr-70">
+                    <p class="post-title">{{news.newsTitle}}</p>
+                    <div class="d-flex align-items-center">
+                        <span class="post-date mr-30">{{news.createDate | date:"dd/MM/yyyy"}}</span>
+                        <span class="post-date"> By {{news.newsAuthor}}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 text-right">
+                <button class="btn btn-info" ng-if="isLogin" ng-click="loadUpdateNews(news.newsId)">Chỉnh sửa</button>
+                <button class="btn btn-danger" ng-if="isLogin" ng-click="confirmDeleteNews(news.newsId)">Xóa</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- ##### Post Details Title Area End ##### -->
+
+<!-- ##### Post Details Area Start ##### -->
+<section class="post-news-area mb-70">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-12 mb-50">
+                <img class="center" ng-src="{{news.newsImage}}"/>
+            </div>
+            <!-- Post Details Content Area -->
+            <div class="col-12">
+                <div class="post-details-content mb-100">
+                    {{news.newsInfo}}
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
