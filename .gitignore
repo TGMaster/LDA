@@ -4,3 +4,8 @@ nb-configuration.xml
 /src/main/resources
 /dataset
 /LDAmodel
+/.classpath
+/.project
+/.settings
+/backend/src/main/resources/*.csv
+/nbactions.xml
