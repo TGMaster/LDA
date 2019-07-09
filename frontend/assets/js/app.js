@@ -63,7 +63,7 @@ var app = angular.module('springboot', [
                 .state({
                     name: 'lda',
                     parent: 'main',
-                    url: '/lda',
+                    url: '^/index',
                     templateUrl: 'assets/js/components/lda/lda.html',
                     controller: 'LDAController',
                     resolve: {
