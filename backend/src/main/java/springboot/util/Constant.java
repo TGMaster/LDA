@@ -21,36 +21,19 @@ public interface Constant {
     public static final String WITHIN_ID = "/{id}";
     
     // news APIs
-    public static final String MODEL_API = API_PREFIX + "/model";
+    public static final String MODEL_API = API_PREFIX + "/lda";
 
     // Request Content Type
     public static final String APPLICATION_JSON_CONTENT_TYPE = "application/json";
-    public static final String APPLICATION_URL_ENCODED = "application/x-www-form-urlencoded";
-
-    // Common header
-    public static final String BOX_AUTHORIZATION = "Authorization";
-    public static final String CONTENT_TYPE = "Content-type";
-    public static final String HEADER_TOKEN = "X-Access-Token";
 
     //Charset UTF
     public static final String CHARSET_UTF8 = "UTF-8";
-
-    public static final String TYPE_ITEMS = "/items";
-    public static final int RANDOM_MIN = 100000;
-    public static final int RANDOM_MAX = 999999;
-
-    public static final long DEFAULT_SESSION_TIME_OUT = 1800000; // 30 minutes
-    public static final int SALT_LENGTH = 6;
 
     public static final int STATUS_SUCCESS = 200;
 
 
     public enum ParamError {
 
-        MISSING_USERNAME_AND_EMAIL("accountName", "Missing both user name and email address"),
-        USER_NAME("userName", "Invalid user name"),
-        PASSWORD("passwordHash", "Invalid password hash"),
-        TOKEN_EXPIRE_DURATION("tokenExpireDuration", "Invalid token expiry duration"),
         REDIRECT_URL("redirectUrl", "Invalid redirect URL");
 
         private final String name;

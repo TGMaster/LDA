@@ -121,10 +121,10 @@ var utils = angular.module('springboot.utils', [])
                         $scope.title = modalOpts.title;
                         $scope.message = modalOpts.message;
                         $scope.opts = {
-                            title: "Xóa tin tức",
-                            message: "Bạn có muốn xóa không?",
-                            lblAccept: "CÓ",
-                            lblDismiss: "KHÔNG"
+                            title: "Delete this object",
+                            message: "Are you sure to delete this object?",
+                            lblAccept: "CONFIRM",
+                            lblDismiss: "CANCEL"
                         };
 
                         if (modalOpts) {
@@ -184,18 +184,4 @@ var utils = angular.module('springboot.utils', [])
         };
 
         return _util;
-    }])
-
-.directive("fileInput", function($parse) {
-
-    return {
-        link: function($scope, element, attrs){
-            element.on('change', function(event){
-                var files = event.target.files;
-                $scope.fileName = files[0].name;
-                $parse(attrs.fileInput).assign($scope, element[0].files);
-                $scope.$apply();
-            });
-        }
-    }
-});
+    }]);

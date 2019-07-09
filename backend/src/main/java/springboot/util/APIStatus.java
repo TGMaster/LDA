@@ -26,7 +26,7 @@ public enum APIStatus {
     ERR_CREATE_MODEL(501, "Create model error"),
 
     ///////////////////
-    //  MODEL SIDE  //
+    //   LDA SIDE   //
     //////////////////
     ERR_MODEL_MISSING_TRAINING(600, "Missing training percentage"),
     ERR_MODEL_MISSING_TOPIC(601, "Missing number of topics"),

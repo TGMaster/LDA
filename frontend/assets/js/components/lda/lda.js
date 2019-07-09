@@ -2,7 +2,7 @@
 
 angular.module('springboot', [])
 
-.controller("ContactController", [
+.controller("LDAController", [
 	'$scope',
 	'Util',
 	'API',
@@ -10,18 +10,19 @@ angular.module('springboot', [])
 	function($scope, Util, API, $state) {
 
 		$scope.submitting = false;
-		$scope.sendEmail = function() {
+		$scope.trainModel = function() {
 			var params = {
-				"name": $scope.contact.name,
-				"email": $scope.contact.email,
-				"phone": $scope.contact.phone,
-				"message": $scope.contact.message
+				"training": $scope.lda.training,
+				"k": $scope.lda.k,
+				"iteration": $scope.lda.iteration,
+				"optimizer": $scope.lda.optimizer
 			};
 			$scope.submitting = true;
-			Util.createRequest(API.SEND_EMAIL, params, function(response) {
+			Util.createRequest(API.LDA_MODEL, params, function(response) {
 				var status = response.status;
 				if (status === 200) {
-					Util.showSuccessToast("Đã gửi lời nhắn, chúng tôi sẽ liên lạc sớm nhất có thể");
+					Util.showSuccessToast("Train LDA Model Successfully!");
+					$scope.model = response.data;
 				} else {
 					var err = _.find(APIStatus, {status: status});
 					if (err) {

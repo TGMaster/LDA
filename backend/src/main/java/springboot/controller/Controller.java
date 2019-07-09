@@ -27,7 +27,11 @@ public class Controller extends BasedAPI {
             @RequestBody RequestModel requestModel
     ) {
         isValidModel(requestModel);
-        String json = Train.train(Integer.parseInt(requestModel.getK()), Integer.parseInt(requestModel.getIteration()), Double.parseDouble(requestModel.getTraining()));
+        int K = Integer.parseInt(requestModel.getK());
+        int iter = Integer.parseInt(requestModel.getIteration());
+        double train = Double.parseDouble(requestModel.getTraining())/100.0;
+
+        String json = Train.train(K, iter, train);
         return responseUtil.successResponse(json);
     }
 

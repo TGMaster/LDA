@@ -1,0 +1,89 @@
+<section class="section pb-0 section-components">
+	<div class="container mb-5">
+		<!-- Basic elements -->
+		<h2 class="mb-5">
+			<span>Latent Dirichlet Allocation</span>
+		</h2>
+		<!-- Inputs -->
+		<form ng-submit="trainModel()">
+			<h3 class="h4 text-success font-weight-bold mb-4">Training</h3>
+			<div class="row">
+				<div class="col-lg-4 col-sm-6">
+					<div class="mb-3">
+						<small class="text-uppercase font-weight-bold">Train Percentage</small>
+					</div>
+					<div class="form-group">
+						<input type="text" placeholder="Train Percentage" class="form-control" ng-model="lda.k"
+							required />
+					</div>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-lg-4 col-sm-6">
+					<div class="mb-3">
+						<small class="text-uppercase font-weight-bold">Number of Topics</small>
+					</div>
+					<div class="form-group">
+						<input type="text" placeholder="Number of Topics" class="form-control" ng-model="lda.iteration"
+							required />
+					</div>
+				</div>
+
+				<div class="col-lg-4 col-sm-6">
+					<div class="mb-3">
+						<small class="text-uppercase font-weight-bold">Iterations</small>
+					</div>
+					<div class="form-group">
+						<input type="text" placeholder="Iterations" class="form-control" ng-model="lda.iteration"
+							required />
+					</div>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-lg-4 col-sm-6">
+					<div class="mb-3">
+						<small class="text-uppercase font-weight-bold">Optimizer</small>
+					</div>
+					<select class="form-control" ng-model="lda.optimizer">
+						<option value="EM">EM</option>
+						<option value="Online" selected>Online</option>
+					</select>
+				</div>
+			</div>
+
+			<!-- Button -->
+			<button class="btn btn-1 btn-outline-warning" type="submit" ng-disabled="submitting"
+				ng-hide="submitting">Train Model</button>
+			<button class="btn btn-1 btn-outline-warning" disabled ng-show="submitting">Processing</button>
+		</form>
+	</div>
+</section>
+<section>
+	<div class="container mb-5">
+		<!-- Output -->
+		<h3 class="h4 text-success font-weight-bold mb-4">Testing</h3>
+		<div class="row">
+			<div class="col-lg-1 col-sm-2">
+				<small class="text-uppercase font-weight-bold">Search</small>
+			</div>
+			<div class="col-lg-4 col-sm-6">
+				<div class="form-group">
+					<input type="text" placeholder="Keywords" class="form-control" />
+				</div>
+			</div>
+			<div class="col-lg-4 col-sm-4">
+				<!-- Button -->
+				<button class="btn btn-1 btn-outline-default" type="button">Search</button>
+			</div>
+		</div>
+	</div>
+</section>
+
+<section>
+	<div class="container mb-5">
+		<div id="panel_body">
+			<ul class="list-group" id="chat_body"></ul>
+		</div>
+	</div>
+
+</section>
