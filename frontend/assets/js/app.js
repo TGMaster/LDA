@@ -31,7 +31,9 @@ var app = angular.module('springboot', [
             {
                 name: 'ldaModule',
                 files: [
-                    'assets/js/components/lda/lda.js'
+                    'assets/js/components/lda/lda.js',
+                    'assets/vendor/d3/d3.v3.min.js',
+                    'assets/css/model.css'
                 ]
             }
         ];

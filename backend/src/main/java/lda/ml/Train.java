@@ -34,19 +34,18 @@ public class Train {
     public static final long SEED = 1435876747;
 
 //    public static void main(String[] args) {
-    public static String train(int K, int iter, double train) {
+    public static List<String> train(int K, int iter, double train) {
         System.setProperty("hadoop.home.dir", "C:\\Spark\\");
         // Creates a SparkSession
         SparkSession spark = SparkSession
                 .builder()
                 .appName("JavaLDAExample")
                 .config("spark.master", "local[*]")
-                .config("spark.executor.memory", "4g")
+                .config("spark.executor.memory", "8g")
                 .getOrCreate();
 
         // Hide spark logging
         Logger.getRootLogger().setLevel(Level.ERROR);
-
 
         // Loads processed data.
         Dataset<Row> dataset = spark.read().load("dataset");
@@ -121,14 +120,10 @@ public class Train {
         Dataset<Row> result = tempTopics.select(col("topic").as("topicId"), col("result.term").as("term"), col("result.probability").as("probability"));
 
         List<String> jsonArray = result.toJSON().collectAsList();
-        String json = "";
-        for (String s : jsonArray) {
-            json += s + ",";
-        }
         // Stop Spark Session
         spark.stop();
 
-        return json;
+        return jsonArray;
     }
 
 }

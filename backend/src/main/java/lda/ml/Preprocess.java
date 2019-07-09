@@ -37,14 +37,14 @@ public class Preprocess {
                 .builder()
                 .appName("JavaLDAExample")
                 .config("spark.master", "local[*]")
-                .config("spark.executor.memory", "4g")
+                .config("spark.executor.memory", "8g")
                 .getOrCreate();
 
         // Hide spark logging
         Logger.getRootLogger().setLevel(Level.ERROR);
 
         // Loads raw data.
-        Dataset<Row> raw = spark.read().json("src/main/resources/" + filename);
+        Dataset<Row> raw = spark.read().json("C:\\Users\\TGMaster\\Desktop\\" + filename);
 
         // Store in Memory and disk
         raw.persist(StorageLevel.MEMORY_AND_DISK());

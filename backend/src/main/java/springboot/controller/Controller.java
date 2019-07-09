@@ -15,6 +15,8 @@ import springboot.util.ApplicationException;
 import springboot.util.Constant;
 import springboot.util.RestAPIResponse;
 
+import java.util.List;
+
 /**
  * @author TGMaster
  */
@@ -31,7 +33,7 @@ public class Controller extends BasedAPI {
         int iter = Integer.parseInt(requestModel.getIteration());
         double train = Double.parseDouble(requestModel.getTraining())/100.0;
 
-        String json = Train.train(K, iter, train);
+        List<String> json = Train.train(K, iter, train);
         return responseUtil.successResponse(json);
     }
 
