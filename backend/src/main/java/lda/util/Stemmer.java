@@ -1,4 +1,4 @@
-package util;
+package lda.util;
 
 /*
 Porter stemmer in Java. The original paper is in
@@ -20,8 +20,6 @@ Considerably revised 4/9/00 in the light of many helpful suggestions
 from Brian Goetz of Quiotix Corporation (brian@quiotix.com).
 Release 4
 */
-
-import java.io.*;
 
 /**
 * Stemmer, implementing the Porter Stemming Algorithm

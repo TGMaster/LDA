@@ -3,14 +3,16 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package util;
+package lda.util;
 
 import java.util.HashMap;
+
 import scala.Predef;
 import scala.Tuple2;
 import scala.collection.JavaConverters;
 import scala.collection.immutable.List;
 import scala.collection.immutable.Map;
+import scala.collection.mutable.WrappedArray;
 
 /**
  *
@@ -26,5 +28,17 @@ public class ToScala {
     
     public static List<String> toScalaList(java.util.List<String> list) {
         return JavaConverters.asScalaBufferConverter(list).asScala().toList();
+    }
+
+    public static java.util.List<Integer> toJavaListInt(WrappedArray<Integer> data) {
+        return JavaConverters.seqAsJavaListConverter(data).asJava();
+    }
+
+    public static java.util.List<String> toJavaListString(WrappedArray<String> data) {
+        return JavaConverters.seqAsJavaListConverter(data).asJava();
+    }
+
+    public static java.util.List<Double> toJavaListDouble(WrappedArray<Double> data) {
+        return JavaConverters.seqAsJavaListConverter(data).asJava();
     }
 }

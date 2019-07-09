@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.spring.boot.model.request;
+package springboot.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -12,14 +12,15 @@ import lombok.Setter;
 
 /**
  *
- * @author S410U
+ * @author TGMaster
  */
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class AuthRequestModel {
-    public String userName;
-    public String passwordHash;
-    public boolean keepLogin;
+public class RequestModel {
+    private String training;
+    private String k;
+    private String iteration;
+    private String optimizer;
 }

@@ -5,62 +5,49 @@
  */
 package lda.ml;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
+
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.spark.api.java.function.MapFunction;
 import org.apache.spark.ml.clustering.LDA;
 import org.apache.spark.ml.clustering.LDAModel;
 import org.apache.spark.ml.feature.CountVectorizer;
 import org.apache.spark.ml.feature.CountVectorizerModel;
-import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Encoder;
-import org.apache.spark.sql.Row;
-import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.Encoders;
-import org.apache.spark.sql.RowFactory;
-import org.apache.spark.sql.catalyst.encoders.RowEncoder;
-import org.apache.spark.sql.types.ArrayType;
-import org.apache.spark.sql.types.DataTypes;
-import org.apache.spark.sql.types.Metadata;
-import org.apache.spark.sql.types.StructField;
-import org.apache.spark.sql.types.StructType;
+import org.apache.spark.sql.*;
+import org.apache.spark.sql.api.java.UDF1;
+import org.apache.spark.sql.api.java.UDF2;
+import org.apache.spark.sql.types.*;
 import org.apache.spark.storage.StorageLevel;
-import util.ToScala;
+import scala.Tuple2;
+import scala.collection.mutable.WrappedArray;
+import lda.util.ToScala;
+
+import static org.apache.spark.sql.functions.*;
 
 /**
- *
  * @author TienTran
  */
 public class Train {
 
-    public static final int K = 20;
     public static final long SEED = 1435876747;
 
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String[] args) {
+//    public static void main(String[] args) {
+    public static String train(int K, int iter, double train) {
         System.setProperty("hadoop.home.dir", "C:\\Spark\\");
         // Creates a SparkSession
         SparkSession spark = SparkSession
                 .builder()
                 .appName("JavaLDAExample")
                 .config("spark.master", "local[*]")
-                .config("spark.executor.memory", "8g")
+                .config("spark.executor.memory", "4g")
                 .getOrCreate();
 
         // Hide spark logging
         Logger.getRootLogger().setLevel(Level.ERROR);
-        
-        
+
+
         // Loads processed data.
         Dataset<Row> dataset = spark.read().load("dataset");
 
@@ -73,65 +60,75 @@ public class Train {
                 .setMinDF(2) //Minumum number of document a term must appear
                 .fit(dataset);
         dataset = vectorizer.transform(dataset);
+        String[] vocabulary = vectorizer.vocabulary();
 
-        dataset.show(false);
-        dataset.printSchema();
-
-        Dataset<Row>[] splits = dataset.randomSplit(new double[]{0.8, 0.2}, SEED);
-        Dataset<Row> train = splits[0];// Store in Memory and disk
-        train.persist(StorageLevel.MEMORY_AND_DISK());
+        Dataset<Row>[] splits = dataset.randomSplit(new double[]{train, 1.0-train}, SEED);
+        Dataset<Row> trainDataset = splits[0];// Store in Memory and disk
+        trainDataset.persist(StorageLevel.MEMORY_AND_DISK());
 
         // LDA Algorithms
         LDAModel ldaModel = new LDA()
                 .setK(K)
-                .setMaxIter(100)
+                .setMaxIter(iter)
                 .setSeed(SEED)
                 .setFeaturesCol("vector")
-                .fit(train);
+                .fit(trainDataset);
 
-//        Pipeline pipeLine = new Pipeline().setStages(new PipelineStage[]{tokenizer, stopwordsRemover, vectorizer});
         try {
             ldaModel.write().overwrite().save("model");
         } catch (IOException ex) {
             ex.printStackTrace();
         }
 
-        double ll = ldaModel.logLikelihood(train);
-        double lp = ldaModel.logPerplexity(train);
+        double ll = ldaModel.logLikelihood(trainDataset);
+        double lp = ldaModel.logPerplexity(trainDataset);
         System.out.println("The lower bound on the log likelihood of the entire corpus: " + ll);
         System.out.println("The upper bound on perplexity: " + lp);
 
-        // Describe topics.
-        Dataset<Row> topics = ldaModel.describeTopics(5);
-        System.out.println("The topics described by their top-weighted terms:");
-        topics.show(false);
-
-        String[] vocabulary = vectorizer.vocabulary();
-        StructType array = new StructType(new StructField[]{
-            new StructField("terms", new ArrayType(DataTypes.StringType, true), false, Metadata.empty())
-        });
-
-        Encoder<Row> encoder = RowEncoder.apply(array);
-        Dataset<String> topicsString = topics.select(topics.col("termIndices")).as(Encoders.STRING());
-
-        Dataset<Row> result = topicsString.map((MapFunction<String, Row>) row -> {
-            String[] topicIndices = row.split(",");
-            LinkedList<String> rs = new LinkedList<>();
-            for (String s : topicIndices) {
-                s = s.replaceAll("[^0-9]+", "");
-                rs.add(vocabulary[Integer.parseInt(s)]);
+        UDF1 index2String = (UDF1<WrappedArray<Integer>, List<String>>) data -> {
+            List<Integer> temp = ToScala.toJavaListInt(data);
+            List<String> array_string = new LinkedList<>();
+            for (int i : temp) {
+                array_string.add(vocabulary[i]);
             }
-            Row r = RowFactory.create(ToScala.toScalaList(rs));
-            return r;
-        }, encoder);
+            return array_string;
+        };
 
-        result = result.join(topics);
-        result.show(false);
+        UDF2 zipUDF = (UDF2<WrappedArray<String>, WrappedArray<Double>, List<Tuple2<String, Double>>>) (a, b) -> {
+            List<Tuple2<String, Double>> list = new LinkedList<>();
+            List<String> term = ToScala.toJavaListString(a);
+            List<Double> proba = ToScala.toJavaListDouble(b);
+            for (int i = 0; i < term.size(); i++) {
+                Tuple2<String, Double> temp = new Tuple2(term.get(i), proba.get(i));
+                list.add(temp);
+            }
+            return list;
+        };
 
-//        result = result.join(topics, topics.col("termWeights"));
-//        result.write().mode(SaveMode.Append).json("result");
+        StructType tuple = new StructType(new StructField[]{
+                new StructField("term", DataTypes.StringType, false, Metadata.empty()),
+                new StructField("probability", DataTypes.DoubleType, false, Metadata.empty())
+        });
+        spark.udf().register("index2String", index2String, DataTypes.createArrayType(DataTypes.StringType));
+        spark.udf().register("zipUDF", zipUDF, DataTypes.createArrayType(tuple));
+
+        // Describe topics.
+        Dataset<Row> topics = ldaModel.describeTopics(5).withColumn("terms", callUDF("index2String", col("termIndices")));
+        System.out.println("The topics described by their top-weighted terms:");
+        topics.select("topic", "terms", "termWeights").show(false);
+
+        Dataset<Row> tempTopics = topics.withColumn("result", explode(callUDF("zipUDF", col("terms"), col("termWeights"))));
+        Dataset<Row> result = tempTopics.select(col("topic").as("topicId"), col("result.term").as("term"), col("result.probability").as("probability"));
+
+        List<String> jsonArray = result.toJSON().collectAsList();
+        String json = "";
+        for (String s : jsonArray) {
+            json += s + ",";
+        }
         // Stop Spark Session
         spark.stop();
+
+        return json;
     }
 
 }

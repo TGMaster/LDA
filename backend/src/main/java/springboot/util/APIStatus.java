@@ -24,25 +24,15 @@ public enum APIStatus {
     //////////////////
     ERR_INTERNAL_SERVER(500, "Internal Server Error"),
     ERR_CREATE_MODEL(501, "Create model error"),
-    //////////////////
-    // DATABASE SIDE//
-    //////////////////
-    ERR_INCORRECT_MODEL_DATA(700, "Incorrect model data"),
-    ERR_USER_NOT_FOUND(701, "User not found."),
-    ERR_PASSWORD_NOT_MATCH(702, "Password doesn't match"),
-    ERR_CREATE_USER(703, "Create User fail"),
-    ERR_EMAIL_INVALID(704, "Email is invalid"),
-    ERR_INVALID_PARAM(705, "Param is invalid"),
-    ERR_OLD_PASS(706, "Old password incorrect"),
 
+    ///////////////////
+    //  MODEL SIDE  //
     //////////////////
-    //   NEWS SIDE  //
-    //////////////////
-    ERR_NEWS_MISSING_TITLE(800, "Missing news title"),
-    ERR_NEWS_MISSING_INFO(801, "Missing news information"),
-    ERR_NEWS_MISSING_AUTHOR(802, "Missing news author"),
-    ERR_NEWS_MISSING_IMAGE(803, "Missing news image"),
-    ERR_NEWS_NOT_FOUND(804, "News is not found");
+    ERR_MODEL_MISSING_TRAINING(600, "Missing training percentage"),
+    ERR_MODEL_MISSING_TOPIC(601, "Missing number of topics"),
+    ERR_MODEL_MISSING_ITERATION(602, "Missing number of iterations"),
+    ERR_MODEL_MISSING_OPTIMIZER(603, "Missing optimizer type");
+
     private final int code;
     private final String description;
 

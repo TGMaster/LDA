@@ -5,19 +5,14 @@
  */
 package lda.ml;
 
+
 import java.util.LinkedList;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.spark.api.java.function.MapFunction;
 import org.apache.spark.ml.feature.StopWordsRemover;
 import org.apache.spark.ml.feature.Tokenizer;
-import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Encoder;
-import org.apache.spark.sql.Encoders;
-import org.apache.spark.sql.Row;
-import org.apache.spark.sql.RowFactory;
-import org.apache.spark.sql.SaveMode;
-import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.*;
 import org.apache.spark.sql.catalyst.encoders.RowEncoder;
 import org.apache.spark.sql.types.*;
 import org.apache.spark.storage.StorageLevel;
@@ -28,7 +23,7 @@ import lda.util.ToScala;
  *
  * @author S410U
  */
-public class Preprocess {
+public class CSVProcess {
 
     public static void preprocess(String filename) {
         System.setProperty("hadoop.home.dir", "C:\\Spark\\");
@@ -44,29 +39,29 @@ public class Preprocess {
         Logger.getRootLogger().setLevel(Level.ERROR);
 
         // Loads raw data.
-        Dataset<Row> raw = spark.read().json("src/main/resources/" + filename);
+
+        Dataset<Row> csv = spark.read()
+                .format("csv")
+                .option("header", "true")
+                .load("src/main/resources/" + filename);
 
         // Store in Memory and disk
-        raw.persist(StorageLevel.MEMORY_AND_DISK());
-        raw = raw.filter(raw.col("reviewText").isNotNull());
-        
-        Dataset<Row> ds = raw.limit(10000);
+        csv.persist(StorageLevel.MEMORY_AND_DISK());
+        csv = csv.filter(csv.col("review").isNotNull());
 
-//        // Tokenizer
+        // Tokenizer
         Tokenizer tokenizer = new Tokenizer()
-                .setInputCol("reviewText")
+                .setInputCol("review")
                 .setOutputCol("tokens");
-        ds = tokenizer.transform(ds);
-        
-        ds.show(false);
+        csv = tokenizer.transform(csv);
         
         String[] english = StopWordsRemover.loadDefaultStopWords("english");
         StopWordsRemover stopwordsRemover = new StopWordsRemover()
                 .setStopWords(english)
                 .setInputCol("tokens")
                 .setOutputCol("filtered");
-        ds = stopwordsRemover.transform(ds);
-        ds.select(ds.col("filtered")).show();
+        csv = stopwordsRemover.transform(csv);
+        csv.select(csv.col("filtered")).show();
         
         StructType array = new StructType(new StructField[]{
             new StructField("reviews", new ArrayType(DataTypes.StringType, true), false, Metadata.empty())
@@ -74,7 +69,7 @@ public class Preprocess {
         
         Encoder<Row> encoder = RowEncoder.apply(array);
         
-        Dataset<String> stringData = ds.select(ds.col("filtered")).as(Encoders.STRING());
+        Dataset<String> stringData = csv.select(csv.col("filtered")).as(Encoders.STRING());
         Dataset<Row> newData = stringData.map((MapFunction<String, Row>) row -> {
             String[] temp = row.split(",");
             LinkedList<String> filtered = new LinkedList<>();

@@ -21,8 +21,7 @@ public interface Constant {
     public static final String WITHIN_ID = "/{id}";
     
     // news APIs
-    public static final String NEWS_API = API_PREFIX + "/news";
-    public static final String NEWS_LIST = "/list";
+    public static final String MODEL_API = API_PREFIX + "/model";
 
     // Request Content Type
     public static final String APPLICATION_JSON_CONTENT_TYPE = "application/json";
@@ -35,12 +34,6 @@ public interface Constant {
 
     //Charset UTF
     public static final String CHARSET_UTF8 = "UTF-8";
-
-    //Sort key
-    public static final int SORT_BY_TITLE = 1;
-    public static final int SORT_BY_INFO = 2;
-    public static final int SORT_BY_AUTHOR = 3;
-    public static final int SORT_BY_DATE = 4;
 
     public static final String TYPE_ITEMS = "/items";
     public static final int RANDOM_MIN = 100000;
