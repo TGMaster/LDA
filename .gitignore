@@ -9,3 +9,4 @@ nb-configuration.xml
 /.settings
 /backend/src/main/resources/*.csv
 /nbactions.xml
+/backend/dataset

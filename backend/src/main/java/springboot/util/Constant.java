@@ -29,6 +29,9 @@ public interface Constant {
     //Charset UTF
     public static final String CHARSET_UTF8 = "UTF-8";
 
+    //SALT
+    public static final int SALT_LENGTH = 6;
+
     public static final int STATUS_SUCCESS = 200;
 
 
