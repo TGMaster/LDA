@@ -35,6 +35,12 @@ var app = angular.module('springboot', [
                     'assets/vendor/d3/d3.v3.min.js',
                     'assets/css/model.css'
                 ]
+            },
+            {
+                name: 'preprocessModule',
+                files: [
+                    'assets/js/components/preprocess/preprocess.js'
+                ]
             }
         ];
 
@@ -53,7 +59,7 @@ var app = angular.module('springboot', [
     // State Provider
     .config(['$stateProvider', '$urlRouterProvider',
         function ($stateProvider, $urlRouterProvider) {
-            $urlRouterProvider.otherwise('index');
+            $urlRouterProvider.otherwise('preprocess');
             $stateProvider
                 // Main Page
                 .state({
@@ -63,14 +69,41 @@ var app = angular.module('springboot', [
                 })
                 // Body
                 .state({
-                    name: 'lda',
+                    name: 'model',
                     parent: 'main',
-                    url: '^/index',
+                    abstract: true,
+                	template: '<div ui-view></div>'
+                })
+                .state({
+                    name: 'model.lda',
+                    url: '/lda',
                     templateUrl: 'assets/js/components/lda/lda.html',
                     controller: 'LDAController',
                     resolve: {
                         loadModule: ['$ocLazyLoad', function ($ocLazyLoad) {
                             return $ocLazyLoad.load('ldaModule');
+                        }]
+                    }
+                })
+                .state({
+                    name: 'model.preprocess',
+                    url: '/preprocess',
+                    templateUrl: 'assets/js/components/preprocess/preprocess.html',
+                    controller: 'PreprocessController',
+                    resolve: {
+                        loadModule: ['$ocLazyLoad', function ($ocLazyLoad) {
+                            return $ocLazyLoad.load('preprocessModule');
+                        }]
+                    }
+                })
+                .state({
+                    name: 'model.search',
+                    url: '/search',
+                    templateUrl: 'assets/js/components/search/search.html',
+                    controller: 'SearchController',
+                    resolve: {
+                        loadModule: ['$ocLazyLoad', function ($ocLazyLoad) {
+                            return $ocLazyLoad.load('searchModule');
                         }]
                     }
                 })
