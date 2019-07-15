@@ -5,26 +5,26 @@
  */
 package lda.ml;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import org.apache.spark.ml.clustering.LDA;
-import org.apache.spark.ml.clustering.LDAModel;
-import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Row;
-import org.apache.spark.sql.SparkSession;
+import java.util.LinkedList;
+import java.util.List;
+
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.spark.ml.feature.IndexToString;
+import org.apache.spark.ml.clustering.LDA;
+import org.apache.spark.ml.clustering.LDAModel;
+import org.apache.spark.ml.feature.CountVectorizer;
+import org.apache.spark.ml.feature.CountVectorizerModel;
+import org.apache.spark.sql.*;
 import org.apache.spark.sql.api.java.UDF1;
-import org.apache.spark.sql.expressions.UserDefinedFunction;
-import org.apache.spark.sql.functions;
-import org.apache.spark.sql.types.ArrayType;
-import org.apache.spark.sql.types.DataTypes;
+import org.apache.spark.sql.api.java.UDF2;
+import org.apache.spark.sql.types.*;
 import org.apache.spark.storage.StorageLevel;
-import scala.collection.mutable.Seq;
+import scala.Tuple2;
 import scala.collection.mutable.WrappedArray;
+import util.ToScala;
+
+import static org.apache.spark.sql.functions.*;
 
 /**
  *
@@ -32,24 +32,11 @@ import scala.collection.mutable.WrappedArray;
  */
 public class Train {
 
-    public static String[] read() {
-        String[] x = null;
-        try (BufferedReader br = Files.newBufferedReader(Paths.get("vocabulary.txt"))) {
-            String line = br.readLine();
-            x = new String[Integer.parseInt(line)];
-            int i = 0;
-            while ((line = br.readLine()) != null) {
-                x[i] = line;
-                i++;
-            }
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
-        return x;
-    }
-
-    public static final int K = 20;
-    public static final long SEED = 1L;
+    public static final int K = 5;
+    public static final long SEED = 1435876747;
+    public static final double ALPHA[] = {0.05,0.1,0.5,1,5,10};
+    public static final double ETA[] = {0.05,0.1,0.5,1,5,10};
+    
 
     /**
      * @param args the command line arguments
@@ -61,62 +48,91 @@ public class Train {
                 .builder()
                 .appName("JavaLDAExample")
                 .config("spark.master", "local[*]")
-                .config("spark.executor.memory", "8g")
+                .config("spark.executor.memory", "16g")
                 .getOrCreate();
 
         // Hide spark logging
         Logger.getRootLogger().setLevel(Level.ERROR);
 
         // Loads processed data.
-        Dataset<Row> dataset = spark.read()
-                .load("dataset");
-        Dataset<Row>[] splits = dataset.randomSplit(new double[]{0.8, 0.2}, 1L);
-        Dataset<Row> train = splits[0];
+        Dataset<Row> dataset = spark.read().load("dataset");
 
-        // Store in Memory and disk
-        train.persist(StorageLevel.MEMORY_AND_DISK());
+        // Index word
+        CountVectorizerModel vectorizer = new CountVectorizer()
+                .setInputCol("words")
+                .setOutputCol("vector")
+                .setVocabSize(10000) //Maximum size of vocabulary
+                .setMinTF(1) //Minimum Term Frequency to be included in vocabulary
+                .setMinDF(2) //Minumum number of document a term must appear
+                .fit(dataset);
+        dataset = vectorizer.transform(dataset);
+        String[] vocabulary = vectorizer.vocabulary();
+
+//        dataset.show(false);
+//        dataset.printSchema();
+
+        Dataset<Row>[] splits = dataset.randomSplit(new double[]{0.8, 0.2}, SEED);
+        Dataset<Row> train = splits[0];
+        Dataset<Row> test = splits[1];
+        train.persist(StorageLevel.MEMORY_AND_DISK()); // Store in Memory and disk
 
         // LDA Algorithms
         LDAModel ldaModel = new LDA()
                 .setK(K)
-                .setSeed(SEED)
+                .setMaxIter(100)
                 .setFeaturesCol("vector")
+                .setDocConcentration(ALPHA[0])
+                .setTopicConcentration(ETA[3])
                 .fit(train);
 
-//        try {
-//            ldaModel.save("LDAmodel");
-//        } catch (IOException ex) {
-//            ex.printStackTrace();
-//        }
-        double ll = ldaModel.logLikelihood(train);
-        double lp = ldaModel.logPerplexity(train);
+        try {
+            ldaModel.write().overwrite().save("model");
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+
+        double ll = ldaModel.logLikelihood(test);
+        double lp = ldaModel.logPerplexity(test);
         System.out.println("The lower bound on the log likelihood of the entire corpus: " + ll);
         System.out.println("The upper bound on perplexity: " + lp);
 
-        // Describe topics.
-        Dataset<Row> topics = ldaModel.describeTopics(20);
-        System.out.println("The topics described by their top-weighted terms:");
-        topics.show(false);
-        topics.printSchema();
-
-        String[] vocabulary = read();
-        IndexToString index2string = new IndexToString().setLabels(vocabulary).setInputCol("termIndices").setOutputCol("terms");
-        index2string.transform(topics).show(false);
-        
-        UserDefinedFunction converter = functions.udf(new UDF1<WrappedArray<Integer>, String[]>() {
-            @Override
-            public String[] call(WrappedArray<Integer> a) {
-                
-                return null;
+        UDF1 index2String = (UDF1<WrappedArray<Integer>, List<String>>) data -> {
+            List<Integer> temp = ToScala.toJavaListInt(data);
+            List<String> array_string = new LinkedList<>();
+            for (int i : temp) {
+                array_string.add(vocabulary[i]);
             }
-        }, new ArrayType(DataTypes.StringType, false));
-        UserDefinedFunction termsIdx2Str = functions.udf(
-                (Seq<Integer>) termIndieces -> termIndices.map(idx -> vocabulary(idx))
-        );
-//        UserDefinedFunction = {
-//            udf((indices: mutable.WrappedArray[Int]
-//            ) => indices.map(values(_))
-//        
+            return array_string;
+        };
+
+        UDF2 zipUDF = (UDF2<WrappedArray<String>, WrappedArray<Double>, List<Tuple2<String, Double>>>) (a, b) -> {
+            List<Tuple2<String, Double>> list = new LinkedList<>();
+            List<String> term = ToScala.toJavaListString(a);
+            List<Double> proba = ToScala.toJavaListDouble(b);
+            for (int i = 0; i < term.size(); i++) {
+                Tuple2<String, Double> temp = new Tuple2(term.get(i), proba.get(i));
+                list.add(temp);
+            }
+            return list;
+        };
+
+        StructType tuple = new StructType(new StructField[]{
+                new StructField("term", DataTypes.StringType, false, Metadata.empty()),
+                new StructField("probability", DataTypes.DoubleType, false, Metadata.empty())
+        });
+        spark.udf().register("index2String", index2String, DataTypes.createArrayType(DataTypes.StringType));
+        spark.udf().register("zipUDF", zipUDF, DataTypes.createArrayType(tuple));
+
+        // Describe topics.
+        Dataset<Row> topics = ldaModel.describeTopics().withColumn("terms", callUDF("index2String", col("termIndices")));
+        System.out.println("The topics described by their top-weighted terms:");
+        topics.select("topic", "terms", "termWeights").show(false);
+
+        Dataset<Row> tempTopics = topics.withColumn("result", explode(callUDF("zipUDF", col("terms"), col("termWeights"))));
+        Dataset<Row> result = tempTopics.select(col("topic").as("topicId"), col("result.term").as("term"), col("result.probability").as("probability"));
+        
+//        result.show(false);
+
 //        
         // Stop Spark Session
         spark.stop();

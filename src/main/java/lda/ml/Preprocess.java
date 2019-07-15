@@ -5,44 +5,36 @@
  */
 package lda.ml;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
+import edu.washington.cs.knowitall.morpha.MorphaStemmer;
 import java.util.LinkedList;
+import java.util.List;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.spark.ml.feature.CountVectorizer;
-import org.apache.spark.ml.feature.CountVectorizerModel;
+import org.apache.spark.api.java.function.MapFunction;
+import org.apache.spark.ml.feature.StopWordsRemover;
 import org.apache.spark.ml.feature.Tokenizer;
 import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Encoder;
 import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
+import org.apache.spark.sql.SaveMode;
 import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.api.java.UDF1;
+import org.apache.spark.sql.catalyst.encoders.RowEncoder;
+import static org.apache.spark.sql.functions.callUDF;
+import static org.apache.spark.sql.functions.col;
 import org.apache.spark.sql.types.*;
 import org.apache.spark.storage.StorageLevel;
+import scala.collection.mutable.WrappedArray;
 import util.Stopwords;
+import util.ToScala;
 
 /**
  *
  * @author S410U
  */
 public class Preprocess {
-
-    public static void write(String[] x) {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter("vocabulary.txt"))) {
-            writer.write(x.length+"\n");
-            for (String s : x) {
-                writer.write(s);
-                writer.newLine();
-            }
-            writer.flush();
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
-    }
 
     /**
      * @param args the command line arguments
@@ -54,75 +46,67 @@ public class Preprocess {
                 .builder()
                 .appName("JavaLDAExample")
                 .config("spark.master", "local[*]")
-                .config("spark.executor.memory", "8g")
+                .config("spark.executor.memory", "16g")
                 .getOrCreate();
 
         // Hide spark logging
         Logger.getRootLogger().setLevel(Level.ERROR);
 
         // Loads raw data.
-        Dataset<Row> ds = spark.read()
-                .format("csv")
-                .option("header", "true")
-                .load("src/main/resources/data.csv");
-//        Dataset<Row> dataset = spark.read()
-//                .json("src/main/resources/Books_5.json");
-
+        Dataset<Row> raw = spark.read().json("src/main/resources/Book2.json");
         // Store in Memory and disk
-        ds.persist(StorageLevel.MEMORY_AND_DISK());
-        ds = ds.filter(ds.col("review").isNotNull());
-        ds.printSchema();
+        raw.persist(StorageLevel.MEMORY_AND_DISK());
+        raw = raw.filter(raw.col("reviewText").isNotNull());
+
+        Dataset<Row> ds = raw.limit(100);
 
 //        // Tokenizer
-//        Tokenizer tokenizer = new Tokenizer()
-//                .setInputCol("review")
-//                .setOutputCol("tokens");
-//        ds = tokenizer.transform(ds);
+        Tokenizer tokenizer = new Tokenizer()
+                .setInputCol("reviewText")
+                .setOutputCol("tokens");
+        Dataset<Row> dataset = tokenizer.transform(ds);
 
-        // Tokenizer and Remove stop words
-        LinkedList<Row> rows = new LinkedList<>();
-        List<String> dataList = ds.select(ds.col("review")).as(Encoders.STRING()).collectAsList();
-
-        for (String t : dataList) {
-            String[] temp = t.toLowerCase().split("\\s");
-            LinkedList<String> filtered = new LinkedList<>();
+        String[] english = StopWordsRemover.loadDefaultStopWords("english");
+        StopWordsRemover stopwordsRemover = new StopWordsRemover()
+                .setStopWords(english)
+                .setInputCol("tokens")
+                .setOutputCol("filtered");
+        dataset = stopwordsRemover.transform(dataset);
+        
+        UDF1 stopword = (UDF1<WrappedArray<String>, List<String>>) data -> {
+            List<String> temp = ToScala.toJavaListString(data);
+            List<String> array_string = new LinkedList<>();
             for (String s : temp) {
-                if (s.length() >= 3 && s.matches("[A-Za-z]+")
-                        && !Stopwords.isStemmedStopword(s) && !Stopwords.isStopword(s)) {
-                    filtered.add(s);
+                if (s.length() >= 3) {
+                    s = s.replaceAll("[^A-Za-z]+", "");
+                    if (!Stopwords.isStemmedStopword(s) && !Stopwords.isStopword(s)) {
+                         array_string.add(s);
+                    }
                 }
             }
-            Row row = RowFactory.create(filtered);
-            rows.add(row);
-        }
+            return array_string;
+        };
 
-        StructType schema = new StructType(new StructField[]{
-            new StructField("reviews", new ArrayType(DataTypes.StringType, true), false, Metadata.empty())
-        });
-
-        Dataset<Row> newData = spark.createDataFrame(rows, schema);
-
-        // Store in memory
-        newData.cache();
-
-        // Index word
-        CountVectorizerModel vectorizer = new CountVectorizer()
-                .setInputCol("reviews")
-                .setOutputCol("vector")
-                .setVocabSize(200000) //Maximum size of vocabulary
-                .setMinTF(1) //Minimum Term Frequency to be included in vocabulary
-                .setMinDF(2) //Minumum number of document a term must appear
-                .fit(newData);
-        newData = vectorizer.transform(newData);
-
-        newData.show(false);
-        newData.printSchema();
-
-        String[] vocabulary = vectorizer.vocabulary();
-        write(vocabulary);
+        UDF1 lemma = (UDF1<WrappedArray<String>, List<String>>) data -> {
+            List<String> temp = ToScala.toJavaListString(data);
+            List<String> array_string = new LinkedList<>();
+            for (String i : temp) {
+                array_string.add(MorphaStemmer.morpha(i, false));
+            }
+            return array_string;
+        };
+        
+        spark.udf().register("lemma", lemma, DataTypes.createArrayType(DataTypes.StringType));
+        spark.udf().register("stopword", stopword, DataTypes.createArrayType(DataTypes.StringType));
+        
+        Dataset<Row> finalDataset = dataset.withColumn("terms", callUDF("stopword", col("filtered")));
+        finalDataset = finalDataset.withColumn("words", callUDF("lemma", col("terms")));
+        finalDataset.printSchema();
+        finalDataset.select("words").show(false);
 
         // Save dataset
-        newData.write().save("dataset");
+        finalDataset.write().mode(SaveMode.Overwrite).save("dataset");
+
         spark.stop();
     }
 

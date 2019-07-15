@@ -1,8 +1,5 @@
 package util;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Arrays;
@@ -274,6 +271,7 @@ public class Stopwords {
 			 "liked",
 			 "likely",
 			 "little",
+                         "lol",
 			 "look",
 			 "looking",
 			 "looks",
@@ -580,7 +578,8 @@ public class Stopwords {
 			 "yourself",
 			 "yourselves",
 			 "z",
-			 "zero"};
+			 "zero"
+        };
 	public static Set<String> stopWordSet = new HashSet<String>(Arrays.asList(stopwords));
 	public static Set<String> stemmedStopWordSet = stemStringSet(stopWordSet);
 	
