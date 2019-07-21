@@ -5,16 +5,29 @@
  */
 package lda.ml;
 
+import edu.washington.cs.knowitall.morpha.MorphaStemmer;
+import java.util.LinkedList;
+import java.util.List;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.spark.ml.clustering.LocalLDAModel;
 import org.apache.spark.ml.feature.CountVectorizer;
 import org.apache.spark.ml.feature.CountVectorizerModel;
+import org.apache.spark.ml.feature.StopWordsRemover;
+import org.apache.spark.ml.feature.Tokenizer;
 import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.api.java.UDF1;
+import static org.apache.spark.sql.functions.callUDF;
 import static org.apache.spark.sql.functions.col;
+import static org.apache.spark.sql.functions.explode;
+import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.storage.StorageLevel;
+import scala.collection.mutable.WrappedArray;
+import util.Stopwords;
+import util.ToScala;
 
 /**
  *
@@ -42,25 +55,64 @@ public class Test {
         Logger.getRootLogger().setLevel(Level.ERROR);
 
         // Loads processed data.
-        Dataset<Row> dataset = spark.read().load("dataset");
+        Dataset<String> test_file = spark.read().textFile("src/main/resources/test_file.txt");
+        Dataset<Row> ds = test_file.toDF();
+
+        // Tokenizer
+        Tokenizer tokenizer = new Tokenizer()
+                .setInputCol("value")
+                .setOutputCol("tokens");
+        Dataset<Row> dataset = tokenizer.transform(ds);
+
+        String[] english = StopWordsRemover.loadDefaultStopWords("english");
+        StopWordsRemover stopwordsRemover = new StopWordsRemover()
+                .setStopWords(english)
+                .setInputCol("tokens")
+                .setOutputCol("filtered");
+        dataset = stopwordsRemover.transform(dataset);
+
+        UDF1 stopword = (UDF1<WrappedArray<String>, List<String>>) data -> {
+            List<String> temp = ToScala.toJavaListString(data);
+            List<String> array_string = new LinkedList<>();
+            for (String s : temp) {
+                if (s.length() >= 3) {
+                    s = s.replaceAll("[^A-Za-z]+", "");
+                    if (!Stopwords.isStemmedStopword(s) && !Stopwords.isStopword(s)) {
+                        array_string.add(s);
+                    }
+                }
+            }
+            return array_string;
+        };
+
+        UDF1 lemma = (UDF1<WrappedArray<String>, List<String>>) data -> {
+            List<String> temp = ToScala.toJavaListString(data);
+            List<String> array_string = new LinkedList<>();
+            for (String i : temp) {
+                array_string.add(MorphaStemmer.morpha(i, false));
+            }
+            return array_string;
+        };
+
+        spark.udf().register("lemma", lemma, DataTypes.createArrayType(DataTypes.StringType));
+        spark.udf().register("stopword", stopword, DataTypes.createArrayType(DataTypes.StringType));
+
+        Dataset<Row> finalDataset = dataset.withColumn("terms", callUDF("stopword", col("filtered")));
+        finalDataset = finalDataset.withColumn("words", callUDF("lemma", col("terms")));
+        finalDataset.select("words").show(false);
 
         // Index word
         CountVectorizerModel vectorizer = new CountVectorizer()
                 .setInputCol("words")
                 .setOutputCol("vector")
                 .setVocabSize(10000) //Maximum size of vocabulary
-                .setMinTF(1) //Minimum Term Frequency to be included in vocabulary
-                .setMinDF(2) //Minumum number of document a term must appear
-                .fit(dataset);
-        dataset = vectorizer.transform(dataset);
+                .fit(finalDataset);
+        Dataset<Row> test = vectorizer.transform(finalDataset);
 
-        //        String[] vocabulary = vectorizer.vocabulary();
-        //        write(vocabulary);
-        Dataset<Row>[] splits = dataset.randomSplit(new double[]{0.8, 0.2}, SEED);
-        Dataset<Row> test = splits[1];// Store in Memory and disk
         test.persist(StorageLevel.MEMORY_AND_DISK());
 
         LocalLDAModel ldaModel = LocalLDAModel.load("model");
+        System.out.println("Seed: " + ldaModel.getSeed());
         double ll = ldaModel.logLikelihood(test);
         double lp = ldaModel.logPerplexity(test);
         System.out.println("The lower bound on the log likelihood of the entire corpus: " + ll);
@@ -71,11 +123,10 @@ public class Test {
 //        System.out.println("The topics described by their top-weighted terms:");
 //        
 //        topics.show(false);
-
         // Shows the result.
         Dataset<Row> transformed = ldaModel.transform(test);
+        transformed.printSchema();
         transformed.select("topicDistribution").show(false);
-        ldaModel.topicsMatrix();
 
         // Stop Spark Session
         spark.stop();

@@ -58,7 +58,7 @@ public class RawTextProcess {
         SparkConf conf = new SparkConf().setAppName("LDA Example");
         conf.set("spark.app.name", "My Spark App");
         conf.set("spark.master", "local[*]");
-        conf.set("spark.executor.memory", "2g");
+        conf.set("spark.executor.memory", "16g");
         conf.set("spark.ui.port", "36000");
         JavaSparkContext sc = new JavaSparkContext(conf);
         // Load and parse the data
@@ -115,8 +115,8 @@ public class RawTextProcess {
         }
         );
         
-        corpuss.saveAsTextFile("src/main/resources/corpus");
-        corpus2.saveAsTextFile("src/main/resources/corpus2");
+//        corpuss.saveAsTextFile("src/main/resources/corpus");
+//        corpus2.saveAsTextFile("src/main/resources/corpus2");
 
         List<Tuple2<String, Long>> termCounts = corpuss.flatMap(
                 new FlatMapFunction<List<String>, String>() {
@@ -208,7 +208,7 @@ public class RawTextProcess {
 //		}
         // 80% Train, 20% Test
         JavaRDD<Tuple2<Long, Vector>>[] splits = documents.randomSplit(new double[]{0.8, 0.2},1L);
-        documents.saveAsTextFile("src/main/resources/corpus1");
+//        documents.saveAsTextFile("src/main/resources/corpus");
         splits[0].saveAsObjectFile("src/main/resources/documents/train");
         splits[1].saveAsObjectFile("src/main/resources/documents/test");
 

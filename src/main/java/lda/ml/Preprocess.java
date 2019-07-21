@@ -10,18 +10,13 @@ import java.util.LinkedList;
 import java.util.List;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.spark.api.java.function.MapFunction;
 import org.apache.spark.ml.feature.StopWordsRemover;
 import org.apache.spark.ml.feature.Tokenizer;
 import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Encoder;
-import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.Row;
-import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SaveMode;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.api.java.UDF1;
-import org.apache.spark.sql.catalyst.encoders.RowEncoder;
 import static org.apache.spark.sql.functions.callUDF;
 import static org.apache.spark.sql.functions.col;
 import org.apache.spark.sql.types.*;
@@ -53,14 +48,17 @@ public class Preprocess {
         Logger.getRootLogger().setLevel(Level.ERROR);
 
         // Loads raw data.
-        Dataset<Row> raw = spark.read().json("src/main/resources/Book2.json");
+        Dataset<Row> raw = spark.read().json("D:\\Tien\\Dataset\\Book2.json");
         // Store in Memory and disk
         raw.persist(StorageLevel.MEMORY_AND_DISK());
         raw = raw.filter(raw.col("reviewText").isNotNull());
 
-        Dataset<Row> ds = raw.limit(100);
+        raw.printSchema();
+        
+        Dataset<Row> ds = raw.limit(1000);
+        ds.write().mode(SaveMode.Append).json("sample");
 
-//        // Tokenizer
+        // Tokenizer
         Tokenizer tokenizer = new Tokenizer()
                 .setInputCol("reviewText")
                 .setOutputCol("tokens");

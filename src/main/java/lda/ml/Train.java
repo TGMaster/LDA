@@ -6,6 +6,7 @@
 package lda.ml;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -32,11 +33,10 @@ import static org.apache.spark.sql.functions.*;
  */
 public class Train {
 
-    public static final int K = 5;
+    public static final int K = 20;
     public static final long SEED = 1435876747;
-    public static final double ALPHA[] = {0.05,0.1,0.5,1,5,10};
-    public static final double ETA[] = {0.05,0.1,0.5,1,5,10};
-    
+    public static final double ALPHA = 0.05;
+    public static final double ETA = 0.5;
 
     /**
      * @param args the command line arguments
@@ -57,40 +57,49 @@ public class Train {
         // Loads processed data.
         Dataset<Row> dataset = spark.read().load("dataset");
 
+        Dataset<Row>[] splits = dataset.randomSplit(new double[]{0.8, 0.2}, SEED);
+        Dataset<Row> test = splits[1];
+
         // Index word
         CountVectorizerModel vectorizer = new CountVectorizer()
                 .setInputCol("words")
                 .setOutputCol("vector")
                 .setVocabSize(10000) //Maximum size of vocabulary
-                .setMinTF(1) //Minimum Term Frequency to be included in vocabulary
-                .setMinDF(2) //Minumum number of document a term must appear
+                .setMinDF(5) //Minumum number of document a term must appear
+                .setMaxDF((60 * 1000) / 100)
                 .fit(dataset);
         dataset = vectorizer.transform(dataset);
         String[] vocabulary = vectorizer.vocabulary();
+        
+                // Index word
+        vectorizer = new CountVectorizer()
+                .setInputCol("words")
+                .setOutputCol("vector")
+                .setVocabSize(10000) //Maximum size of vocabulary
+                .setMinDF(5) //Minumum number of document a term must appear
+                .fit(test);
+        test = vectorizer.transform(test);
 
 //        dataset.show(false);
 //        dataset.printSchema();
-
-        Dataset<Row>[] splits = dataset.randomSplit(new double[]{0.8, 0.2}, SEED);
-        Dataset<Row> train = splits[0];
-        Dataset<Row> test = splits[1];
-        train.persist(StorageLevel.MEMORY_AND_DISK()); // Store in Memory and disk
+        test.persist(StorageLevel.MEMORY_AND_DISK()); // Store in Memory and disk
+        dataset.persist(StorageLevel.MEMORY_AND_DISK()); // Store in Memory and disk
 
         // LDA Algorithms
         LDAModel ldaModel = new LDA()
                 .setK(K)
                 .setMaxIter(100)
                 .setFeaturesCol("vector")
-                .setDocConcentration(ALPHA[0])
-                .setTopicConcentration(ETA[3])
-                .fit(train);
+                .setDocConcentration(ALPHA)
+                .setTopicConcentration(ETA)
+                .setSeed(1435876747)
+                .fit(dataset);
 
         try {
             ldaModel.write().overwrite().save("model");
         } catch (IOException ex) {
             ex.printStackTrace();
         }
-
         double ll = ldaModel.logLikelihood(test);
         double lp = ldaModel.logPerplexity(test);
         System.out.println("The lower bound on the log likelihood of the entire corpus: " + ll);
@@ -117,8 +126,8 @@ public class Train {
         };
 
         StructType tuple = new StructType(new StructField[]{
-                new StructField("term", DataTypes.StringType, false, Metadata.empty()),
-                new StructField("probability", DataTypes.DoubleType, false, Metadata.empty())
+            new StructField("term", DataTypes.StringType, false, Metadata.empty()),
+            new StructField("probability", DataTypes.DoubleType, false, Metadata.empty())
         });
         spark.udf().register("index2String", index2String, DataTypes.createArrayType(DataTypes.StringType));
         spark.udf().register("zipUDF", zipUDF, DataTypes.createArrayType(tuple));
@@ -130,10 +139,12 @@ public class Train {
 
         Dataset<Row> tempTopics = topics.withColumn("result", explode(callUDF("zipUDF", col("terms"), col("termWeights"))));
         Dataset<Row> result = tempTopics.select(col("topic").as("topicId"), col("result.term").as("term"), col("result.probability").as("probability"));
-        
-//        result.show(false);
+        result.show(false);
 
-//        
+        // Shows the result.
+        Dataset<Row> transformed = ldaModel.transform(test);
+        transformed.select("asin","reviewText","topicDistribution").write().mode(SaveMode.Append).json("abc");
+
         // Stop Spark Session
         spark.stop();
     }
