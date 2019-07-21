@@ -7,21 +7,12 @@
 		<!-- Inputs -->
 		<form ng-submit="trainModel()">
 			<h3 class="h4 text-success font-weight-bold mb-4">Training</h3>
+
+			<!-- Number of topics -->
 			<div class="row">
 				<div class="col-lg-4 col-sm-6">
 					<div class="mb-3">
-						<small class="text-uppercase font-weight-bold">Train Percentage</small>
-					</div>
-					<div class="form-group">
-						<input type="text" placeholder="Train Percentage" class="form-control" ng-model="lda.training"
-							required />
-					</div>
-				</div>
-			</div>
-			<div class="row">
-				<div class="col-lg-4 col-sm-6">
-					<div class="mb-3">
-						<small class="text-uppercase font-weight-bold">Number of Topics</small>
+						<small class="text-uppercase font-weight-bold">Number of topics</small>
 					</div>
 					<div class="form-group">
 						<input type="text" placeholder="Number of Topics" class="form-control" ng-model="lda.k"
@@ -29,13 +20,28 @@
 					</div>
 				</div>
 			</div>
+			
+			<!-- Hyperparameter -->
+			<!-- Alpha -->
 			<div class="row">
 				<div class="col-lg-4 col-sm-6">
 					<div class="mb-3">
-						<small class="text-uppercase font-weight-bold">Iterations</small>
+						<small class="text-uppercase font-weight-bold">Alpha</small>
 					</div>
 					<div class="form-group">
-						<input type="text" placeholder="Iterations" class="form-control" ng-model="lda.iteration"
+						<input type="text" placeholder="Alpha" class="form-control" ng-model="lda.alpha"
+							required />
+					</div>
+				</div>
+			</div>
+			<!-- Beta -->
+			<div class="row">
+				<div class="col-lg-4 col-sm-6">
+					<div class="mb-3">
+						<small class="text-uppercase font-weight-bold">Beta</small>
+					</div>
+					<div class="form-group">
+						<input type="text" placeholder="Beta" class="form-control" ng-model="lda.beta"
 							required />
 					</div>
 				</div>
@@ -46,26 +52,6 @@
 				ng-hide="submitting">Train Model</button>
 			<button class="btn btn-1 btn-outline-warning" disabled ng-show="submitting">Processing</button>
 		</form>
-	</div>
-</section>
-<section>
-	<div class="container mb-5">
-		<!-- Output -->
-		<h3 class="h4 text-success font-weight-bold mb-4">Testing</h3>
-		<div class="row">
-			<div class="col-lg-1 col-sm-2">
-				<small class="text-uppercase font-weight-bold">Search</small>
-			</div>
-			<div class="col-lg-4 col-sm-6">
-				<div class="form-group">
-					<input type="text" placeholder="Keywords" class="form-control" />
-				</div>
-			</div>
-			<div class="col-lg-4 col-sm-4">
-				<!-- Button -->
-				<button class="btn btn-1 btn-outline-default" type="button">Search</button>
-			</div>
-		</div>
 	</div>
 </section>
 

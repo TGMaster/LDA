@@ -34,14 +34,14 @@ public class Train {
     public static final long SEED = 1435876747;
 
 //    public static void main(String[] args) {
-    public static List<String> train(int K, int iter, double train) {
+    public static List<String> train(int K, double alpha, double beta) {
         System.setProperty("hadoop.home.dir", "C:\\Spark\\");
         // Creates a SparkSession
         SparkSession spark = SparkSession
                 .builder()
                 .appName("JavaLDAExample")
                 .config("spark.master", "local[*]")
-                .config("spark.executor.memory", "8g")
+                .config("spark.executor.memory", "4g")
                 .getOrCreate();
 
         // Hide spark logging
@@ -52,7 +52,7 @@ public class Train {
 
         // Index word
         CountVectorizerModel vectorizer = new CountVectorizer()
-                .setInputCol("reviews")
+                .setInputCol("words")
                 .setOutputCol("vector")
                 .setVocabSize(1500000) //Maximum size of vocabulary
                 .setMinTF(2) //Minimum Term Frequency to be included in vocabulary
@@ -61,28 +61,21 @@ public class Train {
         dataset = vectorizer.transform(dataset);
         String[] vocabulary = vectorizer.vocabulary();
 
-        Dataset<Row>[] splits = dataset.randomSplit(new double[]{train, 1.0-train}, SEED);
-        Dataset<Row> trainDataset = splits[0];// Store in Memory and disk
-        trainDataset.persist(StorageLevel.MEMORY_AND_DISK());
-
         // LDA Algorithms
         LDAModel ldaModel = new LDA()
                 .setK(K)
-                .setMaxIter(iter)
+                .setMaxIter(100)
                 .setSeed(SEED)
                 .setFeaturesCol("vector")
-                .fit(trainDataset);
+                .setDocConcentration(alpha)
+                .setTopicConcentration(beta)
+                .fit(dataset);
 
         try {
             ldaModel.write().overwrite().save("model");
         } catch (IOException ex) {
             ex.printStackTrace();
         }
-
-        double ll = ldaModel.logLikelihood(trainDataset);
-        double lp = ldaModel.logPerplexity(trainDataset);
-        System.out.println("The lower bound on the log likelihood of the entire corpus: " + ll);
-        System.out.println("The upper bound on perplexity: " + lp);
 
         UDF1 index2String = (UDF1<WrappedArray<Integer>, List<String>>) data -> {
             List<Integer> temp = ToScala.toJavaListInt(data);

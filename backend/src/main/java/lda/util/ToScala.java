@@ -7,11 +7,13 @@ package lda.util;
 
 import java.util.HashMap;
 
+import org.apache.spark.sql.types.StructField;
 import scala.Predef;
 import scala.Tuple2;
 import scala.collection.JavaConverters;
 import scala.collection.immutable.List;
 import scala.collection.immutable.Map;
+import scala.collection.Seq;
 import scala.collection.mutable.WrappedArray;
 
 /**
@@ -39,6 +41,10 @@ public class ToScala {
     }
 
     public static java.util.List<Double> toJavaListDouble(WrappedArray<Double> data) {
+        return JavaConverters.seqAsJavaListConverter(data).asJava();
+    }
+
+    public static java.util.List<StructField> toJavaListStructField(Seq<StructField> data) {
         return JavaConverters.seqAsJavaListConverter(data).asJava();
     }
 }

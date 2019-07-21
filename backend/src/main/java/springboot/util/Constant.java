@@ -20,8 +20,9 @@ public interface Constant {
     public static final String API_PREFIX = "/api";
     public static final String WITHIN_ID = "/{id}";
     
-    // news APIs
-    public static final String MODEL_API = API_PREFIX + "/lda";
+    // lda APIs
+    public static final String LDA_API = API_PREFIX + "/lda";
+    public static final String PREPROCESS_API = API_PREFIX + "/preprocess";
 
     // Request Content Type
     public static final String APPLICATION_JSON_CONTENT_TYPE = "application/json";

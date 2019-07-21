@@ -41,6 +41,12 @@ var app = angular.module('springboot', [
                 files: [
                     'assets/js/components/preprocess/preprocess.js'
                 ]
+            },
+            {
+                name: 'searchModule',
+                files: [
+                    'assets/js/components/search/search.js'
+                ]
             }
         ];
 

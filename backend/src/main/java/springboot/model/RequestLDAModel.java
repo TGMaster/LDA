@@ -19,8 +19,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RequestLDAModel {
-    private String training;
     private String k;
-    private String iteration;
-    private String optimizer;
+    private String alpha;
+    private String beta;
 }

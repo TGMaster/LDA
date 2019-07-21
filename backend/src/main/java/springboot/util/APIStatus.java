@@ -28,10 +28,15 @@ public enum APIStatus {
     ///////////////////
     //   LDA SIDE   //
     //////////////////
-    ERR_MODEL_MISSING_TRAINING(600, "Missing training percentage"),
-    ERR_MODEL_MISSING_TOPIC(601, "Missing number of topics"),
-    ERR_MODEL_MISSING_ITERATION(602, "Missing number of iterations"),
-    ERR_MODEL_MISSING_OPTIMIZER(603, "Missing optimizer type");
+    ERR_MODEL_MISSING_TOPIC(600, "Missing number of topics"),
+    ERR_MODEL_MISSING_ALPHA(600, "Missing alpha number"),
+    ERR_MODEL_MISSING_BETA(602, "Missing beta number"),
+
+    ////////////////////
+    //PREPROCESS SIDE//
+    ///////////////////
+    ERR_PREPROCESS_MISSING_FILENAME(700, "Missing file name"),
+    ERR_PREPROCESS_MISSING_COLUMN(701, "Missing column name");
 
     private final int code;
     private final String description;

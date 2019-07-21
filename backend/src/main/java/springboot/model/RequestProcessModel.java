@@ -10,6 +10,6 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RequestProcessModel {
-    private String limit;
+    private String filename;
     private String column;
 }

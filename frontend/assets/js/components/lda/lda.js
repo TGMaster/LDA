@@ -38,7 +38,7 @@ angular.module('springboot', [])
 						.filter(function (d) { return !d.children; }))
 					.enter().append("g")
 					.attr("class", "node")
-					.attr("transform", function (d) { return "translate(" + d.x + "," + d.y + ")"; })
+					.attr("transform", function (d) { console.log(d); return "translate(" + d.x + "," + d.y + ")"; })
 				color = d3.scale.category20();
 
 				node.append("title")
@@ -78,10 +78,9 @@ angular.module('springboot', [])
 			$scope.submitting = false;
 			$scope.trainModel = function () {
 				var params = {
-					"training": $scope.lda.training,
 					"k": $scope.lda.k,
-					"iteration": $scope.lda.iteration,
-					"optimizer": $scope.lda.optimizer
+					"alpha": $scope.lda.alpha,
+					"beta": $scope.lda.beta
 				};
 				$scope.submitting = true;
 				Util.createRequest(API.LDA_MODEL, params, function (response) {

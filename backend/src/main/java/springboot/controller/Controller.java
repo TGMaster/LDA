@@ -5,11 +5,13 @@
  */
 package springboot.controller;
 
+import lda.ml.Preprocess;
 import lda.ml.Train;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import springboot.model.RequestModel;
+import springboot.model.RequestLDAModel;
+import springboot.model.RequestProcessModel;
 import springboot.util.APIStatus;
 import springboot.util.ApplicationException;
 import springboot.util.Constant;
@@ -21,34 +23,62 @@ import java.util.List;
  * @author TGMaster
  */
 @RestController
-@RequestMapping(Constant.MODEL_API)
 public class Controller extends BasedAPI {
 
-    @RequestMapping(method = RequestMethod.POST)
+    // TrainProcess
+    @RequestMapping(value=Constant.LDA_API, method = RequestMethod.POST)
     public ResponseEntity<RestAPIResponse> trainModel(
-            @RequestBody RequestModel requestModel
+            @RequestBody RequestLDAModel requestModel
     ) {
         isValidModel(requestModel);
         int K = Integer.parseInt(requestModel.getK());
-        int iter = Integer.parseInt(requestModel.getIteration());
-        double train = Double.parseDouble(requestModel.getTraining())/100.0;
+        double alpha = Double.parseDouble(requestModel.getAlpha());
+        double beta = Double.parseDouble(requestModel.getBeta());
 
-        List<String> json = Train.train(K, iter, train);
+        List<String> json = Train.train(K, alpha, beta);
         return responseUtil.successResponse(json);
     }
 
-    private void isValidModel(RequestModel requestModel) {
-        if (requestModel.getTraining() == null || requestModel.getTraining().equals("")) {
-            throw new ApplicationException(APIStatus.ERR_MODEL_MISSING_TRAINING);
+
+    // PreProcess
+    @RequestMapping(value=Constant.PREPROCESS_API, method = RequestMethod.POST)
+    public ResponseEntity<RestAPIResponse> preProcess(
+            @RequestBody RequestProcessModel requestModel
+    ) {
+        isValidInput(requestModel);
+
+        List<String> json = Preprocess.preprocess(requestModel.getFilename(), requestModel.getColumn());
+        return responseUtil.successResponse(json);
+    }
+
+    // View schema
+    @RequestMapping(value=Constant.PREPROCESS_API ,method = RequestMethod.GET)
+    public ResponseEntity<RestAPIResponse> previewDataset(
+            @RequestParam(value = "dataset", required = true) String dataset
+    ) {
+        return responseUtil.successResponse(Preprocess.preview(dataset));
+    }
+
+
+    // Utils
+    private void isValidModel(RequestLDAModel requestModel) {
+        if (requestModel.getAlpha() == null || requestModel.getAlpha().equals("")) {
+            throw new ApplicationException(APIStatus.ERR_MODEL_MISSING_ALPHA);
         }
-        if (requestModel.getIteration() == null || requestModel.getIteration().equals("")) {
-            throw new ApplicationException(APIStatus.ERR_MODEL_MISSING_TOPIC);
+        if (requestModel.getBeta() == null || requestModel.getBeta().equals("")) {
+            throw new ApplicationException(APIStatus.ERR_MODEL_MISSING_BETA);
         }
         if (requestModel.getK() == null || requestModel.getK().equals("")) {
-            throw new ApplicationException(APIStatus.ERR_MODEL_MISSING_ITERATION);
+            throw new ApplicationException(APIStatus.ERR_MODEL_MISSING_TOPIC);
         }
-        if (requestModel.getOptimizer() == null || requestModel.getOptimizer().equals("")) {
-            throw new ApplicationException(APIStatus.ERR_MODEL_MISSING_OPTIMIZER);
+    }
+
+    private void isValidInput(RequestProcessModel requestModel) {
+        if (requestModel.getFilename() == null || requestModel.getFilename().equals("")) {
+            throw new ApplicationException(APIStatus.ERR_PREPROCESS_MISSING_FILENAME);
+        }
+        if (requestModel.getColumn() == null || requestModel.getColumn().equals("")) {
+            throw new ApplicationException(APIStatus.ERR_PREPROCESS_MISSING_COLUMN);
         }
     }
 }
