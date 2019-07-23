@@ -55,8 +55,8 @@ public class Train {
                 .setInputCol("words")
                 .setOutputCol("vector")
                 .setVocabSize(1500000) //Maximum size of vocabulary
-                .setMinTF(2) //Minimum Term Frequency to be included in vocabulary
-                .setMinDF(2) //Minumum number of document a term must appear
+                .setMinDF(5) //Minumum number of document a term must appear
+                .setMaxDF(0.6*1000)
                 .fit(dataset);
         dataset = vectorizer.transform(dataset);
         String[] vocabulary = vectorizer.vocabulary();
