@@ -31,6 +31,12 @@ angular.module('springboot', [])
 					$scope.submitting = false;
 				});
 			};
+
+			click();
 		}
 		//
 	]);
+
+function click() {
+	$('#tabs-icons-text-3-tab').click();
+}

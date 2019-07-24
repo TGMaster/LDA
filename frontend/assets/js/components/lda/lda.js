@@ -7,71 +7,76 @@ angular.module('springboot', [])
 		function ($scope, Util, API) {
 
 			$scope.loadModel = function () {
+				d3.selectAll('.model').selectAll('svg').remove();
 
-				var json = {
-					"name": "data",
-					"children": [
-						{
-							"name": "topics",
-							"children": angular.fromJson($scope.result)
-						}
-					]
+				var groupBy = function (xs, key) {
+					return xs.reduce(function (rv, x) {
+						(rv[x[key]] = rv[x[key]] || []).push(x);
+						return rv;
+					}, {});
 				};
 
-				var r = 1500,
-					format = d3.format(",d"),
-					fill = d3.scale.category20c();
-
-				var bubble = d3.layout.pack()
-					.sort(null)
-					.size([r, r])
-					.padding(1.5);
-
-				var vis = d3.select(".model").append("svg")
-					.attr("width", r)
-					.attr("height", r)
-					.attr("class", "bubble");
-
-
-				var node = vis.selectAll("g.node")
-					.data(bubble.nodes(classes(json))
-						.filter(function (d) { return !d.children; }))
-					.enter().append("g")
-					.attr("class", "node")
-					.attr("transform", function (d) { console.log(d); return "translate(" + d.x + "," + d.y + ")"; })
-				color = d3.scale.category20();
-
-				node.append("title")
-					.text(function (d) { return d.className + ": " + format(d.value); });
-
-				node.append("circle")
-					.attr("r", function (d) { return d.r; })
-					.style("fill", function (d) { return color(d.topicName); });
-
-				var text = node.append("text")
-					.attr("text-anchor", "middle")
-					.attr("dy", ".3em")
-					.text(function (d) { return d.className.substring(0, d.r / 3) });
-
-				text.append("tspan")
-					.attr("dy", "1.2em")
-					.attr("x", 0)
-					.text(function (d) { return Math.ceil(d.value * 10000) / 10000; });
-
-				// Returns a flattened hierarchy containing all leaf nodes under the root.
-				function classes(root) {
-					var classes = [];
-
-					function recurse(term, node) {
-						if (node.children) node.children.forEach(function (child) { recurse(node.term, child); });
-						else classes.push({ topicName: node.topicId, className: node.term, value: node.probability });
+				function count(obj) {
+					var c = 0;
+					for (var key in obj) {
+						if (obj.hasOwnProperty(key))++c;
 					}
+					return c;
+				}
 
-					recurse(null, root);
-					return { children: classes };
-				};
+				wordScale = d3.scale.linear().domain([1, 100, 1000, 10000]).range([10, 20, 40, 80]).clamp(true);
+				wordColor = d3.scale.linear().domain([10, 20, 40, 80]).range(["blue", "green", "orange", "red"]);
 
+				var topic = angular.fromJson($scope.result);
+				var grouped = groupBy(topic, 'topicId');
+				for (x = 0; x < count(grouped); x++) {
+					viz = d3.select(".model").append("svg")
+						.attr("width", 400)
+						.attr("height", 440)
+						.attr("id", "svg" + x);
+				}
 
+				for (x = 0; x < count(grouped); x++) {
+
+					d3.layout.cloud().size([400, 400])
+						// .words([{"text":"test","size":wordScale(1000)},{"text":"bad","size":wordScale(1)}])
+						.words(grouped[x])
+						.rotate(function () { return ~~(Math.random() * 2) * 5; })
+						.fontSize(function (d) { return wordScale(d.probability * 100000); })
+						.on("end", draw)
+						.start();
+
+					function draw(words) {
+						viz = d3.select("#svg" + x);
+
+						viz.append("g")
+							.attr("transform", "translate(200,220)")
+							.selectAll("text")
+							.data(words)
+							.enter().append("text")
+							.style("font-size", function (d) { return d.size + "px"; })
+							.style("fill", function (d) { return wordColor(d.size); })
+							.style("opacity", 1.)
+							.attr("text-anchor", "middle")
+							.attr("transform", function (d) {
+								return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")";
+							})
+							.text(function (d) { return d.text; });
+
+						viz
+							.append("text")
+							.data([grouped[x][0]])
+							.style("font-size", 20)
+							.style("font-weight", 900)
+							.attr("x", 100)
+							.attr("y", 20)
+							.text(function (d) { return "TOPIC " + d.topicId; })
+
+						//  d3.select("#svg"+x).append("svg:text").text("Topic " + x);	
+						//    viz.enter().append("svg:text").text("Topic " + x);
+
+					}
+				}
 			};
 
 
@@ -98,7 +103,14 @@ angular.module('springboot', [])
 					}
 					$scope.submitting = false;
 				});
+
 			};
+
+			click();
 		}
 		//
 	]);
+
+function click() {
+	$('#tabs-icons-text-2-tab').click();
+}

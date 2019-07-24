@@ -27,6 +27,11 @@ angular.module('springboot', [])
 					$scope.submitting = false;
 				});
 			};
+			click();
 		}
 		//
 	]);
+
+function click() {
+	$('#tabs-icons-text-1-tab').click();
+}

@@ -105,12 +105,12 @@ public class Train {
         spark.udf().register("zipUDF", zipUDF, DataTypes.createArrayType(tuple));
 
         // Describe topics.
-        Dataset<Row> topics = ldaModel.describeTopics(5).withColumn("terms", callUDF("index2String", col("termIndices")));
+        Dataset<Row> topics = ldaModel.describeTopics(20).withColumn("terms", callUDF("index2String", col("termIndices")));
         System.out.println("The topics described by their top-weighted terms:");
         topics.select("topic", "terms", "termWeights").show(false);
 
         Dataset<Row> tempTopics = topics.withColumn("result", explode(callUDF("zipUDF", col("terms"), col("termWeights"))));
-        Dataset<Row> result = tempTopics.select(col("topic").as("topicId"), col("result.term").as("term"), col("result.probability").as("probability"));
+        Dataset<Row> result = tempTopics.select(col("topic").as("topicId"), col("result.term").as("text"), col("result.probability").as("probability"));
 
         List<String> jsonArray = result.toJSON().collectAsList();
         // Stop Spark Session
