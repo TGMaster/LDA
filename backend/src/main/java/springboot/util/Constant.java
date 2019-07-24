@@ -23,6 +23,7 @@ public interface Constant {
     // lda APIs
     public static final String LDA_API = API_PREFIX + "/lda";
     public static final String PREPROCESS_API = API_PREFIX + "/preprocess";
+    public static final String TEST_API = API_PREFIX + "/test";
 
     // Request Content Type
     public static final String APPLICATION_JSON_CONTENT_TYPE = "application/json";

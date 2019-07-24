@@ -20332,3 +20332,8 @@ html:not([dir='rtl']) .noUi-horizontal .noUi-handle
     margin: 10px auto;
     border: 1px solid;
 }
+
+#result
+{
+    margin-top: 50px;
+}

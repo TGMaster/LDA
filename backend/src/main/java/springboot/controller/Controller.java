@@ -6,6 +6,7 @@
 package springboot.controller;
 
 import lda.ml.Preprocess;
+import lda.ml.Test;
 import lda.ml.Train;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -47,7 +48,7 @@ public class Controller extends BasedAPI {
     ) {
         isValidInput(requestModel);
 
-        List<String> json = Preprocess.preprocess(requestModel.getFilename(), requestModel.getColumn());
+        List<String> json = Preprocess.preprocess(requestModel.getFilename(), requestModel.getColumn(), null);
         return responseUtil.successResponse(json);
     }
 
@@ -56,7 +57,16 @@ public class Controller extends BasedAPI {
     public ResponseEntity<RestAPIResponse> previewDataset(
             @RequestParam(value = "dataset", required = true) String dataset
     ) {
-        return responseUtil.successResponse(Preprocess.preview(dataset));
+        return responseUtil.successResponse(Preprocess.preview(dataset, null));
+    }
+
+
+    // Search
+    @RequestMapping(value=Constant.TEST_API, method = RequestMethod.POST)
+    public ResponseEntity<RestAPIResponse> search(
+            @RequestBody String keyword
+    ) {
+        return responseUtil.successResponse(Test.Search(keyword));
     }
 
 

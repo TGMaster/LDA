@@ -14,10 +14,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.spark.ml.feature.StopWordsRemover;
 import org.apache.spark.ml.feature.Tokenizer;
-import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Row;
-import org.apache.spark.sql.SaveMode;
-import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.*;
 import org.apache.spark.sql.api.java.UDF1;
 import org.apache.spark.sql.types.*;
 import org.apache.spark.storage.StorageLevel;
@@ -34,15 +31,9 @@ import static org.apache.spark.sql.functions.col;
  */
 public class Preprocess {
 
-    public static List<String> preview(String filename) {
-        System.setProperty("hadoop.home.dir", "C:\\Spark\\");
-        // Creates a SparkSession
-        SparkSession spark = SparkSession
-                .builder()
-                .appName("JavaLDAExample")
-                .config("spark.master", "local[*]")
-                .config("spark.executor.memory", "4g")
-                .getOrCreate();
+    public static List<String> preview(String filename,SparkSession spark) {
+
+        spark = checkSpark(spark);
 
         // Hide spark logging
         Logger.getRootLogger().setLevel(Level.ERROR);
@@ -63,15 +54,32 @@ public class Preprocess {
         return result;
     }
 
-    public static List<String> preprocess(String filename, String column) {
-        System.setProperty("hadoop.home.dir", "C:\\Spark\\");
-        // Creates a SparkSession
-        SparkSession spark = SparkSession
-                .builder()
-                .appName("JavaLDAExample")
-                .config("spark.master", "local[*]")
-                .config("spark.executor.memory", "4g")
-                .getOrCreate();
+    public static Dataset<Row> preprocess(String string, SparkSession spark) {
+
+        spark = checkSpark(spark);
+
+        // Hide spark logging
+        Logger.getRootLogger().setLevel(Level.ERROR);
+
+        List<Row> list=new ArrayList<>();
+        list.add(RowFactory.create(string));
+
+        Dataset<Row> dataset = spark.createDataFrame(list, DataTypes.createStructType(
+                new StructField[] {
+                        DataTypes.createStructField("reviewText", DataTypes.StringType, false)
+                }
+        ));
+
+        // Tokenizer
+        dataset = tokenize(dataset, "reviewText");
+
+        dataset = removeStopWord(dataset, "tokens", spark);
+        return dataset;
+    }
+
+    public static List<String> preprocess(String filename, String column, SparkSession spark) {
+
+        spark = checkSpark(spark);
 
         // Hide spark logging
         Logger.getRootLogger().setLevel(Level.ERROR);
@@ -82,18 +90,50 @@ public class Preprocess {
         // Store in Memory and disk
         ds.persist(StorageLevel.MEMORY_AND_DISK());
 
-//        // Tokenizer
+        ds = tokenize(ds, column);
+        
+        ds = removeStopWord(ds, "tokens", spark);
+
+        Dataset<Row> demo = ds.limit(10);
+        List<String> jsonArray = demo.toJSON().collectAsList();
+
+        // Save dataset
+        ds.write().mode(SaveMode.Overwrite).save("dataset");
+        spark.stop();
+
+        return jsonArray;
+    }
+
+    public static SparkSession checkSpark(SparkSession spark) {
+        if (spark == null) {
+            System.setProperty("hadoop.home.dir", "C:\\Spark\\");
+            // Creates a SparkSession
+            spark = SparkSession
+                    .builder()
+                    .appName("JavaLDAExample")
+                    .config("spark.master", "local[*]")
+                    .config("spark.executor.memory", "4g")
+                    .getOrCreate();
+        }
+        return spark;
+    }
+
+    public static Dataset<Row> tokenize(Dataset<Row> dataset, String column) {
+        // Tokenizer
         Tokenizer tokenizer = new Tokenizer()
                 .setInputCol(column)
                 .setOutputCol("tokens");
-        ds = tokenizer.transform(ds);
-        
+        dataset = tokenizer.transform(dataset);
+        return dataset;
+    }
+
+    public static Dataset<Row> removeStopWord(Dataset<Row> dataset, String column, SparkSession spark) {
         String[] english = StopWordsRemover.loadDefaultStopWords("english");
         StopWordsRemover stopwordsRemover = new StopWordsRemover()
                 .setStopWords(english)
-                .setInputCol("tokens")
+                .setInputCol(column)
                 .setOutputCol("filtered");
-        ds = stopwordsRemover.transform(ds);
+        dataset = stopwordsRemover.transform(dataset);
 
         UDF1 stopword = (UDF1<WrappedArray<String>, List<String>>) data -> {
             List<String> temp = ToScala.toJavaListString(data);
@@ -121,17 +161,9 @@ public class Preprocess {
         spark.udf().register("lemma", lemma, DataTypes.createArrayType(DataTypes.StringType));
         spark.udf().register("stopword", stopword, DataTypes.createArrayType(DataTypes.StringType));
 
-        Dataset<Row> dataset = ds.withColumn("terms", callUDF("stopword", col("filtered")));
-        dataset = dataset.withColumn("words", callUDF("lemma", col("terms")));
-
-        Dataset<Row> demo = dataset.limit(10);
-        List<String> jsonArray = demo.toJSON().collectAsList();
-
-        // Save dataset
-        dataset.write().mode(SaveMode.Overwrite).save("dataset");
-        spark.stop();
-
-        return jsonArray;
+        Dataset<Row> result = dataset.withColumn("terms", callUDF("stopword", col("filtered")));
+        result = result.withColumn("words", callUDF("lemma", col("terms")));
+        return result;
     }
 
 }

@@ -12,7 +12,9 @@ var constant = angular.module('springboot.constants', [])
     .constant('API', {
         // Mail
         LDA_MODEL: {path: '/lda', method: 'POST'},
-        PREPROCESS: {path: '/preprocess', method: 'POST'}
+        PREPROCESS: {path: '/preprocess', method: 'POST'},
+        PREVIEW: {path: '/preprocess', method: 'GET'},
+        SEARCH: {path: '/test', method: 'POST'}
     })
 
     // API status
