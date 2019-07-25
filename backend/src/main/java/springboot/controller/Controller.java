@@ -40,6 +40,13 @@ public class Controller extends BasedAPI {
         return responseUtil.successResponse(json);
     }
 
+    // Load model
+    @RequestMapping(value=Constant.LDA_API, method = RequestMethod.GET)
+    public ResponseEntity<RestAPIResponse> loadModel() {
+        List<String> json = Train.loadModel();
+        return responseUtil.successResponse(json);
+    }
+
 
     // PreProcess
     @RequestMapping(value=Constant.PREPROCESS_API, method = RequestMethod.POST)

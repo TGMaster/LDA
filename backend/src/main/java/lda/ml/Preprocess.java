@@ -31,6 +31,8 @@ import static org.apache.spark.sql.functions.col;
  */
 public class Preprocess {
 
+
+    // view schema
     public static List<String> preview(String filename,SparkSession spark) {
 
         spark = checkSpark(spark);
@@ -54,6 +56,7 @@ public class Preprocess {
         return result;
     }
 
+    // Pre-process a string
     public static Dataset<Row> preprocess(String string, SparkSession spark) {
 
         spark = checkSpark(spark);
@@ -77,6 +80,7 @@ public class Preprocess {
         return dataset;
     }
 
+    // Pre-process a dataset
     public static List<String> preprocess(String filename, String column, SparkSession spark) {
 
         spark = checkSpark(spark);
@@ -104,6 +108,8 @@ public class Preprocess {
         return jsonArray;
     }
 
+
+    // Utils
     public static SparkSession checkSpark(SparkSession spark) {
         if (spark == null) {
             System.setProperty("hadoop.home.dir", "C:\\Spark\\");

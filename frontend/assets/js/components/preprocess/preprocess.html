@@ -1,41 +1,44 @@
 <section class="section pb-0 section-components">
-	<div class="container mb-5">
-		<!-- Basic elements -->
-		<h2 class="mb-5">
-			<span>Latent Dirichlet Allocation</span>
-		</h2>
-		<!-- Inputs -->
-		<form ng-submit="preProcess()">
-			<h3 class="h4 text-success font-weight-bold mb-4">Preprocess</h3>
-			<div class="row">
-				<div class="col-lg-4 col-sm-6">
-					<div class="mb-3">
-						<small class="text-uppercase font-weight-bold">Dataset</small>
-					</div>
-					<div class="form-group">
-						<input type="text" placeholder="Dataset" class="form-control" ng-model="preprocess.dataset"
-							required />
-					</div>
-				</div>
-			</div>
-			<div class="row">
-				<div class="col-lg-4 col-sm-6">
-					<div class="mb-3">
-						<small class="text-uppercase font-weight-bold">Column</small>
-					</div>
-					<div class="form-group">
-						<input type="text" placeholder="Iterations" class="form-control" ng-model="preprocess.column"
-							required />
-					</div>
-				</div>
-			</div>
+    <div class="container mb-5">
+        <!-- Basic elements -->
+        <h2 class="mb-5">
+            <span>Latent Dirichlet Allocation</span>
+        </h2>
+        <!-- Inputs -->
+        <form ng-submit="preProcess()">
+            <h3 class="h4 text-success font-weight-bold mb-4">Preprocess</h3>
+            <div class="row">
+                <div class="col-lg-4 col-sm-6">
+                    <div class="mb-3">
+                        <small class="text-uppercase font-weight-bold">Dataset</small>
+                    </div>
+                    <div class="form-group">
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" id="upload" ng-model="preprocess.dataset">
+                            <label class="custom-file-label" for="upload">Upload File</label>
+                        </div>
 
-			<!-- Button -->
-			<button class="btn btn-1 btn-outline-warning" type="submit" ng-disabled="submitting"
-				ng-hide="submitting">Preprocess Dataset</button>
-			<button class="btn btn-1 btn-outline-warning" disabled ng-show="submitting">Processing</button>
-		</form>
-	</div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-4 col-sm-6">
+                    <div class="mb-3">
+                        <small class="text-uppercase font-weight-bold">Column</small>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" placeholder="Column name" class="form-control" ng-model="preprocess.column"
+                            required />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Button -->
+            <button class="btn btn-1 btn-outline-warning" type="submit" ng-disabled="submitting"
+                ng-hide="submitting">Preprocess Dataset</button>
+            <button class="btn btn-1 btn-outline-warning" disabled ng-show="submitting">Processing</button>
+        </form>
+    </div>
 </section>
 
 <div class="model"></div>

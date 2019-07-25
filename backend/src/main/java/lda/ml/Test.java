@@ -51,12 +51,7 @@ public class Test {
         Dataset<Row> dataset = Preprocess.preprocess(input, spark);
 
         // Index word
-        CountVectorizerModel vectorizer = new CountVectorizer()
-                .setInputCol("words")
-                .setOutputCol("vector")
-                .setVocabSize(1000) //Maximum size of vocabulary
-//                .setMinDF(5) //Minumum number of document a term must appear
-                .fit(dataset);
+        CountVectorizerModel vectorizer = CountVectorizerModel.load("vectorizer");
         dataset = vectorizer.transform(dataset);
 
 //        dataset.show(false);

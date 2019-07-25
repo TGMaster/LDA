@@ -106,6 +106,22 @@ angular.module('springboot', [])
 
 			};
 
+			$scope.loadLDA = function () {
+				Util.createRequest(API.LDA_LOAD, null, function (response) {
+					var status = response.status;
+					if (status === 200) {
+						Util.showSuccessToast("Load LDA Model Successfully!");
+						$scope.submitting = false;
+						$scope.result = "[" + response.data + "]";
+						$scope.loadModel();
+					} else {
+						var err = _.find(APIStatus, { status: status });
+						if (err) {
+							Util.showErrorAPI(err.msgKey);
+						}
+					}
+				});
+			}
 			click();
 		}
 		//

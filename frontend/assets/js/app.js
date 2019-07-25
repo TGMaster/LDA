@@ -10,9 +10,9 @@ var app = angular.module('springboot', [
     'ui.bootstrap'
 ])
 
-    // Angular toastr config
-    // see more https://github.com/Foxandxss/angular-toastr
-    .config(['toastrConfig', function (toastrConfig) {
+// Angular toastr config
+// see more https://github.com/Foxandxss/angular-toastr
+.config(['toastrConfig', function(toastrConfig) {
         angular.extend(toastrConfig, {
             autoDismiss: false,
             containerId: 'toast-container',
@@ -23,12 +23,10 @@ var app = angular.module('springboot', [
             preventOpenDuplicates: true,
             target: 'body'
         });
-    }
-    ])
+    }])
     // Config ocLazy Loading
-    .config(['$ocLazyLoadProvider', 'AppConfig', function ($ocLazyLoadProvider, AppConfig) {
-        var modules = [
-            {
+    .config(['$ocLazyLoadProvider', 'AppConfig', function($ocLazyLoadProvider, AppConfig) {
+        var modules = [{
                 name: 'ldaModule',
                 files: [
                     'assets/js/components/lda/lda.js',
@@ -52,7 +50,7 @@ var app = angular.module('springboot', [
 
         // Read config value
         if (angular.isDefined(AppConfig.OCLAZY_CACHE_MODULE)) {
-            angular.forEach(modules, function (v) {
+            angular.forEach(modules, function(v) {
                 v.cache = AppConfig.OCLAZY_CACHE_MODULE;
             });
         }
@@ -64,10 +62,10 @@ var app = angular.module('springboot', [
     }])
     // State Provider
     .config(['$stateProvider', '$urlRouterProvider',
-        function ($stateProvider, $urlRouterProvider) {
+        function($stateProvider, $urlRouterProvider) {
             $urlRouterProvider.otherwise('preprocess');
             $stateProvider
-                // Main Page
+            // Main Page
                 .state({
                     name: 'main',
                     abstract: true,
@@ -78,7 +76,7 @@ var app = angular.module('springboot', [
                     name: 'model',
                     parent: 'main',
                     abstract: true,
-                	template: '<div ui-view></div>'
+                    template: '<div ui-view></div>'
                 })
                 .state({
                     name: 'model.lda',
@@ -86,7 +84,7 @@ var app = angular.module('springboot', [
                     templateUrl: 'assets/js/components/lda/lda.html',
                     controller: 'LDAController',
                     resolve: {
-                        loadModule: ['$ocLazyLoad', function ($ocLazyLoad) {
+                        loadModule: ['$ocLazyLoad', function($ocLazyLoad) {
                             return $ocLazyLoad.load('ldaModule');
                         }]
                     }
@@ -97,7 +95,7 @@ var app = angular.module('springboot', [
                     templateUrl: 'assets/js/components/preprocess/preprocess.html',
                     controller: 'PreprocessController',
                     resolve: {
-                        loadModule: ['$ocLazyLoad', function ($ocLazyLoad) {
+                        loadModule: ['$ocLazyLoad', function($ocLazyLoad) {
                             return $ocLazyLoad.load('preprocessModule');
                         }]
                     }
@@ -108,20 +106,20 @@ var app = angular.module('springboot', [
                     templateUrl: 'assets/js/components/search/search.html',
                     controller: 'SearchController',
                     resolve: {
-                        loadModule: ['$ocLazyLoad', function ($ocLazyLoad) {
+                        loadModule: ['$ocLazyLoad', function($ocLazyLoad) {
                             return $ocLazyLoad.load('searchModule');
                         }]
                     }
-                })
-                ;
-        }])
+                });
+        }
+    ])
 
-    // Config request
-    // Set up interceptor
-    .config(['$httpProvider', function ($httpProvider) {
-        $httpProvider.defaults.headers.post['Content-Type'] = 'application/json;charset=utf-8';
-    }])
+// Config request
+// Set up interceptor
+.config(['$httpProvider', function($httpProvider) {
+    $httpProvider.defaults.headers.post['Content-Type'] = 'application/json;charset=utf-8';
+}])
 
-    .config(['$qProvider', function ($qProvider) {
-        $qProvider.errorOnUnhandledRejections(false);
-    }]);
+.config(['$qProvider', function($qProvider) {
+    $qProvider.errorOnUnhandledRejections(false);
+}]);
