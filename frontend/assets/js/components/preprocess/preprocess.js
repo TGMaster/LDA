@@ -9,14 +9,16 @@ angular.module('springboot', [])
             $(".custom-file-input").on("change", function () {
                 var fileName = $(this).val().split("\\").pop();
                 $(this).siblings(".custom-file-label").addClass("selected").html(fileName);
+                $scope.dataset = fileName;
+                console.log($scope.dataset);
                 $scope.preview();
             });
 
             $scope.submitting = false;
             $scope.preProcess = function () {
                 var params = {
-                    "filename": $scope.preprocess.dataset,
-                    "column": $scope.preprocess.column
+                    "filename": $scope.dataset,
+                    "column": $scope.column
                 };
                 $scope.submitting = true;
                 Util.createRequest(API.PREPROCESS, params, function (response) {
@@ -36,7 +38,7 @@ angular.module('springboot', [])
 
             $scope.preview = function () {
                 var request = {
-                    "path": API.PREVIEW.path + "?dataset=" + $scope.preprocess.dataset,
+                    "path": API.PREVIEW.path + "?dataset=" + $scope.dataset,
                     "method": API.PREVIEW.method
                 };
                 Util.createRequest(request, null, function (response) {

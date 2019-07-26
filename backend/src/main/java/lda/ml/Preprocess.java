@@ -33,15 +33,22 @@ public class Preprocess {
 
 
     // view schema
-    public static List<String> preview(String filename,SparkSession spark) {
+    public static List<String> preview(String filename) {
 
-        spark = checkSpark(spark);
+        System.setProperty("hadoop.home.dir", "C:\\Spark\\");
+        // Creates a SparkSession
+        SparkSession spark = SparkSession
+                .builder()
+                .appName("JavaLDAExample")
+                .config("spark.master", "local[*]")
+                .config("spark.executor.memory", "4g")
+                .getOrCreate();
 
         // Hide spark logging
         Logger.getRootLogger().setLevel(Level.ERROR);
 
         // Loads raw data.
-        Dataset<Row> raw = spark.read().json("D:\\" + filename);
+        Dataset<Row> raw = spark.read().json("D:\\dataset\\" + filename);
 
         // Store in Memory and disk
         raw.persist(StorageLevel.MEMORY_AND_DISK());
@@ -57,9 +64,16 @@ public class Preprocess {
     }
 
     // Pre-process a string
-    public static Dataset<Row> preprocess(String string, SparkSession spark) {
+    public static Dataset<Row> preprocess(String string) {
 
-        spark = checkSpark(spark);
+        System.setProperty("hadoop.home.dir", "C:\\Spark\\");
+        // Creates a SparkSession
+        SparkSession spark = SparkSession
+                .builder()
+                .appName("JavaLDAExample")
+                .config("spark.master", "local[*]")
+                .config("spark.executor.memory", "4g")
+                .getOrCreate();
 
         // Hide spark logging
         Logger.getRootLogger().setLevel(Level.ERROR);
@@ -81,15 +95,22 @@ public class Preprocess {
     }
 
     // Pre-process a dataset
-    public static List<String> preprocess(String filename, String column, SparkSession spark) {
+    public static List<String> preprocess(String filename, String column) {
 
-        spark = checkSpark(spark);
+        System.setProperty("hadoop.home.dir", "C:\\Spark\\");
+        // Creates a SparkSession
+        SparkSession spark = SparkSession
+                .builder()
+                .appName("JavaLDAExample")
+                .config("spark.master", "local[*]")
+                .config("spark.executor.memory", "4g")
+                .getOrCreate();
 
         // Hide spark logging
         Logger.getRootLogger().setLevel(Level.ERROR);
 
         // Loads raw data.
-        Dataset<Row> ds = spark.read().json("D:\\" + filename);
+        Dataset<Row> ds = spark.read().json("D:\\dataset\\" + filename);
 
         // Store in Memory and disk
         ds.persist(StorageLevel.MEMORY_AND_DISK());
@@ -103,27 +124,12 @@ public class Preprocess {
 
         // Save dataset
         ds.write().mode(SaveMode.Overwrite).save("dataset");
-        spark.stop();
 
         return jsonArray;
     }
 
 
     // Utils
-    public static SparkSession checkSpark(SparkSession spark) {
-        if (spark == null) {
-            System.setProperty("hadoop.home.dir", "C:\\Spark\\");
-            // Creates a SparkSession
-            spark = SparkSession
-                    .builder()
-                    .appName("JavaLDAExample")
-                    .config("spark.master", "local[*]")
-                    .config("spark.executor.memory", "4g")
-                    .getOrCreate();
-        }
-        return spark;
-    }
-
     public static Dataset<Row> tokenize(Dataset<Row> dataset, String column) {
         // Tokenizer
         Tokenizer tokenizer = new Tokenizer()

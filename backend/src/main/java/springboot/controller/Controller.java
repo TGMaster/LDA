@@ -55,16 +55,16 @@ public class Controller extends BasedAPI {
     ) {
         isValidInput(requestModel);
 
-        List<String> json = Preprocess.preprocess(requestModel.getFilename(), requestModel.getColumn(), null);
+        List<String> json = Preprocess.preprocess(requestModel.getFilename(), requestModel.getColumn());
         return responseUtil.successResponse(json);
     }
 
     // View schema
     @RequestMapping(value=Constant.PREPROCESS_API ,method = RequestMethod.GET)
     public ResponseEntity<RestAPIResponse> previewDataset(
-            @RequestParam(value = "dataset", required = true) String dataset
+            @RequestParam(value = "dataset") String dataset
     ) {
-        return responseUtil.successResponse(Preprocess.preview(dataset, null));
+        return responseUtil.successResponse(Preprocess.preview(dataset));
     }
 
 

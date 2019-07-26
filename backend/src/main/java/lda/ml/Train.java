@@ -49,6 +49,7 @@ public class Train {
 
         // Loads processed data.
         Dataset<Row> dataset = spark.read().load("dataset");
+        dataset.persist(StorageLevel.MEMORY_AND_DISK());
 
         // Index word
         CountVectorizerModel vectorizer = new CountVectorizer()
@@ -60,6 +61,7 @@ public class Train {
                 .fit(dataset);
         dataset = vectorizer.transform(dataset);
 
+        // Save vectorizer for later
         try {
             vectorizer.write().overwrite().save("vectorizer");
         } catch (IOException ex) {
@@ -85,8 +87,6 @@ public class Train {
         }
 
         List<String> jsonArray = json(vocabulary,spark,ldaModel);
-        // Stop Spark Session
-        spark.stop();
 
         return jsonArray;
     }
@@ -107,8 +107,6 @@ public class Train {
         String[] vocabulary = vectorizer.vocabulary();
 
         List<String> jsonArray = json(vocabulary,spark,ldaModel);
-        // Stop Spark Session
-        spark.stop();
 
         return jsonArray;
     }

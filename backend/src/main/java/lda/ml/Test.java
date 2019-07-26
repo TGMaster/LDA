@@ -48,14 +48,11 @@ public class Test {
                 .config("spark.executor.memory", "4g")
                 .getOrCreate();
 
-        Dataset<Row> dataset = Preprocess.preprocess(input, spark);
+        Dataset<Row> dataset = Preprocess.preprocess(input);
 
         // Index word
         CountVectorizerModel vectorizer = CountVectorizerModel.load("vectorizer");
         dataset = vectorizer.transform(dataset);
-
-//        dataset.show(false);
-//        dataset.printSchema();
 
         final long SEED = 1435876747;
         
@@ -91,9 +88,6 @@ public class Test {
                 result.add(topic);
             }
         }
-
-        // Stop Spark Session
-        spark.stop();
 
         return result;
     }
