@@ -20,29 +20,25 @@
 					</div>
 				</div>
 			</div>
-			
+
 			<!-- Hyperparameter -->
-			<!-- Alpha -->
 			<div class="row">
-				<div class="col-lg-4 col-sm-6">
+				<!-- Alpha -->
+				<div class="col-lg-6 col-sm-6">
 					<div class="mb-3">
 						<small class="text-uppercase font-weight-bold">Alpha</small>
 					</div>
 					<div class="form-group">
-						<input type="text" placeholder="Alpha" class="form-control" ng-model="lda.alpha"
-							required />
+						<input type="text" placeholder="Alpha" class="form-control" ng-model="lda.alpha" required />
 					</div>
 				</div>
-			</div>
-			<!-- Beta -->
-			<div class="row">
-				<div class="col-lg-4 col-sm-6">
+				<!-- Beta -->
+				<div class="col-lg-6 col-sm-6">
 					<div class="mb-3">
 						<small class="text-uppercase font-weight-bold">Beta</small>
 					</div>
 					<div class="form-group">
-						<input type="text" placeholder="Beta" class="form-control" ng-model="lda.beta"
-							required />
+						<input type="text" placeholder="Beta" class="form-control" ng-model="lda.beta" required />
 					</div>
 				</div>
 			</div>
@@ -51,17 +47,9 @@
 			<button class="btn btn-1 btn-outline-warning" type="submit" ng-disabled="submitting"
 				ng-hide="submitting">Train Model</button>
 			<button class="btn btn-1 btn-outline-warning" disabled ng-show="submitting">Processing</button>
-			<button class="btn btn-1 btn-outline-warning" type="button" ng-click="loadLDA()">Load Model</button>
+			<button class="btn btn-1 btn-outline-primary" type="button" ng-click="loadLDA()">Load Model</button>
 		</form>
 	</div>
 </section>
-
-<!-- <section>
-	<div class="container mb-5">
-		<div id="panel_body">
-			<ul class="list-group" id="chat_body"></ul>
-		</div>
-	</div>
-</section> -->
 
 <div class="model"></div>

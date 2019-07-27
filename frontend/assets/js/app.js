@@ -37,13 +37,15 @@ var app = angular.module('springboot', [
             {
                 name: 'preprocessModule',
                 files: [
-                    'assets/js/components/preprocess/preprocess.js'
+                    'assets/js/components/preprocess/preprocess.js',
+                    'assets/js/components/preprocess/preprocess.css'
                 ]
             },
             {
                 name: 'searchModule',
                 files: [
-                    'assets/js/components/search/search.js'
+                    'assets/js/components/search/search.js',
+                    'assets/js/components/search/search.css'
                 ]
             }
         ];

@@ -9,21 +9,20 @@
 		<!-- Inputs -->
 		<form ng-submit="search()">
 			<div class="row">
-				<div class="col-lg-1 col-sm-2">
-					<small class="text-uppercase font-weight-bold">Search</small>
-				</div>
-				<div class="col-lg-4 col-sm-6">
+				<div class="col-lg-12 col-sm-12">
+					<div class="mb-3">
+						<small class="text-uppercase font-weight-bold">Search</small>
+					</div>
 					<div class="form-group">
-						<input type="text" placeholder="Keywords" class="form-control" ng-model="keyword" />
+						<textarea class="form-control" rows="8" ng-model="keyword"></textarea>
 					</div>
 				</div>
-				<div class="col-lg-4 col-sm-4">
-					<!-- Button -->
-					<button class="btn btn-1 btn-outline-warning" type="submit" ng-disabled="submitting"
-						ng-hide="submitting">Search</button>
-					<button class="btn btn-1 btn-outline-warning" disabled ng-show="submitting">Processing</button>
-				</div>
 			</div>
+
+			<!-- Button -->
+			<button class="btn btn-1 btn-outline-warning" type="submit" ng-disabled="submitting"
+				ng-hide="submitting">Search</button>
+			<button class="btn btn-1 btn-outline-warning" disabled ng-show="submitting">Processing</button>
 		</form>
 
 		<div id="result">
@@ -31,5 +30,7 @@
 				Topic {{topic.topic}}: {{topic.probability}}
 			</p>
 		</div>
+
+		<div class="model"></div>
 	</div>
 </section>

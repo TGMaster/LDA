@@ -10,6 +10,10 @@ import java.util.LinkedList;
 import java.util.List;
 
 import edu.washington.cs.knowitall.morpha.MorphaStemmer;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.spark.ml.feature.StopWordsRemover;
@@ -29,11 +33,21 @@ import static org.apache.spark.sql.functions.col;
  *
  * @author S410U
  */
+
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter
+@Setter
+class DataType {
+    private String column;
+    private String type;
+}
+
 public class Preprocess {
 
 
     // view schema
-    public static List<String> preview(String filename) {
+    public static List<DataType> preview(String filename) {
 
         System.setProperty("hadoop.home.dir", "C:\\Spark\\");
         // Creates a SparkSession
@@ -54,13 +68,14 @@ public class Preprocess {
         raw.persist(StorageLevel.MEMORY_AND_DISK());
 
         List<StructField> schema = ToScala.toJavaListStructField(raw.schema().toSeq());
-        List<String> result = new ArrayList<>();
+        List<DataType> listOfSchema = new ArrayList<>();
         spark.stop();
 
         for (int i = 0; i < schema.size(); i++) {
-            result.add(schema.get(i).name() + " [" + schema.get(i).dataType().typeName() + "]");
+            DataType temp = new DataType(schema.get(i).name(),schema.get(i).dataType().typeName());
+            listOfSchema.add(temp);
         }
-        return result;
+        return listOfSchema;
     }
 
     // Pre-process a string
@@ -119,7 +134,7 @@ public class Preprocess {
         
         ds = removeStopWord(ds, "tokens", spark);
 
-        Dataset<Row> demo = ds.limit(10);
+        Dataset<Row> demo = ds.select("reviewText", "words").limit(5);
         List<String> jsonArray = demo.toJSON().collectAsList();
 
         // Save dataset

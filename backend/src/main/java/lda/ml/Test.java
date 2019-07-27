@@ -20,11 +20,14 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
  * @author S410U
  */
 @AllArgsConstructor
@@ -55,7 +58,7 @@ public class Test {
         dataset = vectorizer.transform(dataset);
 
         final long SEED = 1435876747;
-        
+
         LocalLDAModel ldaModel = LocalLDAModel.load("model");
         double ll = ldaModel.logLikelihood(dataset);
         double lp = ldaModel.logPerplexity(dataset);
@@ -82,13 +85,21 @@ public class Test {
             JSONObject value = jsonObject.getJSONObject("topicDistribution");
             JSONArray arrJson = value.getJSONArray("values");
             Double[] dArr = new Double[arrJson.length()];
-            for(int i = 0; i < arrJson.length(); i++) {
+            for (int i = 0; i < arrJson.length(); i++) {
                 dArr[i] = arrJson.getDouble(i);
-                Topic topic = new Topic(i, dArr[i]*100.0);
+                Topic topic = new Topic(i, dArr[i] * 100.0);
                 result.add(topic);
             }
         }
-
+        List<String> x = new ArrayList<>();
+        JSONArray ja = new JSONArray(result);
+        for (int i = 0; i < ja.length(); i++) {
+            x.add(ja.get(i).toString());
+        }
+        try {
+            Files.write(Paths.get("output.json"), x, Charset.defaultCharset());
+        } catch (IOException ex) {
+        }
         return result;
     }
 

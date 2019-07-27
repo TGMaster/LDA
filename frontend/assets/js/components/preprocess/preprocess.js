@@ -10,7 +10,6 @@ angular.module('springboot', [])
                 var fileName = $(this).val().split("\\").pop();
                 $(this).siblings(".custom-file-label").addClass("selected").html(fileName);
                 $scope.dataset = fileName;
-                console.log($scope.dataset);
                 $scope.preview();
             });
 
@@ -24,8 +23,8 @@ angular.module('springboot', [])
                 Util.createRequest(API.PREPROCESS, params, function (response) {
                     var status = response.status;
                     if (status === 200) {
-                        console.log(response.data);
                         Util.showSuccessToast("Have fun with your dataset!");
+                        $scope.results = angular.fromJson("[" + response.data + "]");
                     } else {
                         var err = _.find(APIStatus, { status: status });
                         if (err) {
@@ -44,7 +43,7 @@ angular.module('springboot', [])
                 Util.createRequest(request, null, function (response) {
                     var status = response.status;
                     if (status === 200) {
-                        console.log(response.data);
+                        $scope.columns = response.data;
                     } else {
                         var err = _.find(APIStatus, { status: status });
                         if (err) {

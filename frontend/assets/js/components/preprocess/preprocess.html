@@ -27,8 +27,7 @@
                         <small class="text-uppercase font-weight-bold">Column</small>
                     </div>
                     <div class="form-group">
-                        <input type="text" placeholder="Column name" class="form-control" ng-model="column"
-                            required />
+                        <input type="text" placeholder="Column name" class="form-control" ng-model="column" required />
                     </div>
                 </div>
             </div>
@@ -38,6 +37,35 @@
                 ng-hide="submitting">Preprocess Dataset</button>
             <button class="btn btn-1 btn-outline-warning" disabled ng-show="submitting">Processing</button>
         </form>
+    </div>
+
+    <!-- Print Schema -->
+    <div class="container mb-5" ng-show="columns">
+        <h3 class="h4 text-success font-weight-bold mb-4">Dataset schema</h3>
+        <table class="table table-bordered">
+            <tr>
+                <th ng-repeat="column in columns" scope="col">{{column.column}}</th>
+            </tr>
+            <tr>
+                <td ng-repeat="column in columns">{{column.type}}</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Dataset results -->
+    <div class="container mb-5" ng-show="results">
+    <!-- <div class="container mb-5"> -->
+        <h3 class="h4 text-success font-weight-bold mb-4">Dataset results</h3>
+        <table class="table table-bordered">
+            <tr>
+                <th>Raw</th>
+                <th>Processed</th>
+            </tr>
+            <tr ng-repeat="result in results">
+                <td class="processed">{{result.reviewText}}</th>
+                <td class="processed">{{result.words}}</td>
+            </tr>
+        </table>
     </div>
 </section>
 
