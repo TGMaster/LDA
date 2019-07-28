@@ -25,12 +25,20 @@
 			<button class="btn btn-1 btn-outline-warning" disabled ng-show="submitting">Processing</button>
 		</form>
 
-		<div id="result">
-			<p ng-repeat="topic in topics">
-				Topic {{topic.topic}}: {{topic.probability}}
-			</p>
-		</div>
-
 		<div class="model"></div>
+
+		<button class="btn btn-outline-primary" ng-click="isShowResult = !isShowResult" ng-show="topics">Details</button>
+		<div class="result" ng-show="isShowResult">
+			<table class="table table-bordered">
+				<tr>
+					<th>Topic</th>
+					<th>Probability</th>
+				</tr>
+				<tr ng-repeat="topic in topics">
+					<td>{{topic.topic}}</th>
+					<td>{{topic.probability}}</td>
+				</tr>
+			</table>
+		</div>
 	</div>
 </section>

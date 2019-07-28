@@ -31,7 +31,8 @@ var app = angular.module('springboot', [
                 files: [
                     'assets/js/components/lda/lda.js',
                     'assets/css/model.css',
-                    'assets/vendor/d3/d3.layout.cloud.js'
+                    'assets/vendor/d3/d3.layout.cloud.js',
+                    'assets/vendor/d3/d3.v3.min.js'
                 ]
             },
             {
@@ -45,7 +46,8 @@ var app = angular.module('springboot', [
                 name: 'searchModule',
                 files: [
                     'assets/js/components/search/search.js',
-                    'assets/js/components/search/search.css'
+                    'assets/js/components/search/search.css',
+                    'assets/vendor/d3/d3.v4.min.js'
                 ]
             }
         ];
