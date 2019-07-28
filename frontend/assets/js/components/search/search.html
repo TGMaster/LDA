@@ -5,13 +5,13 @@
 			<span>Latent Dirichlet Allocation</span>
 		</h2>
 		<!-- Output -->
-		<h3 class="h4 text-success font-weight-bold mb-4">Testing</h3>
+		<h3 class="h4 text-success font-weight-bold mb-4">Topic Distribution</h3>
 		<!-- Inputs -->
 		<form ng-submit="search()">
 			<div class="row">
 				<div class="col-lg-12 col-sm-12">
 					<div class="mb-3">
-						<small class="text-uppercase font-weight-bold">Search</small>
+						<small class="text-uppercase font-weight-bold">Leave a review</small>
 					</div>
 					<div class="form-group">
 						<textarea class="form-control" rows="8" ng-model="keyword"></textarea>
@@ -21,7 +21,7 @@
 
 			<!-- Button -->
 			<button class="btn btn-1 btn-outline-warning" type="submit" ng-disabled="submitting"
-				ng-hide="submitting">Search</button>
+				ng-hide="submitting">Submit</button>
 			<button class="btn btn-1 btn-outline-warning" disabled ng-show="submitting">Processing</button>
 		</form>
 

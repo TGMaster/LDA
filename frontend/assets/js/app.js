@@ -29,10 +29,11 @@ var app = angular.module('springboot', [
         var modules = [{
                 name: 'ldaModule',
                 files: [
+                    'assets/vendor/d3/d3.v3.min.js', // need to load before d3.layout.cloud
                     'assets/js/components/lda/lda.js',
-                    'assets/css/model.css',
-                    'assets/vendor/d3/d3.layout.cloud.js',
-                    'assets/vendor/d3/d3.v3.min.js'
+                    'assets/js/components/lda/lda.css',
+                    'assets/vendor/d3/d3.layout.cloud.js'
+                    
                 ]
             },
             {
@@ -45,9 +46,9 @@ var app = angular.module('springboot', [
             {
                 name: 'searchModule',
                 files: [
+                    'assets/vendor/d3/d3.v4.min.js',
                     'assets/js/components/search/search.js',
-                    'assets/js/components/search/search.css',
-                    'assets/vendor/d3/d3.v4.min.js'
+                    'assets/js/components/search/search.css'
                 ]
             }
         ];

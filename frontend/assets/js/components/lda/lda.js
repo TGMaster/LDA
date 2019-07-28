@@ -5,7 +5,6 @@ angular.module('springboot', [])
 		'Util',
 		'API',
 		function ($scope, Util, API) {
-
 			$scope.loadModel = function () {
 				d3.selectAll('.model').selectAll('svg').remove();
 
@@ -29,8 +28,9 @@ angular.module('springboot', [])
 
 				var topic = angular.fromJson($scope.result);
 				var grouped = groupBy(topic, 'topicId');
+				
 				for (x = 0; x < count(grouped); x++) {
-					viz = d3.select(".model").append("svg")
+					d3.select(".model").append("svg")
 						.attr("width", 400)
 						.attr("height", 440)
 						.attr("id", "svg" + x);
@@ -47,7 +47,7 @@ angular.module('springboot', [])
 						.start();
 
 					function draw(words) {
-						viz = d3.select("#svg" + x);
+						var viz = d3.select("#svg" + x);
 
 						viz.append("g")
 							.attr("transform", "translate(200,220)")
