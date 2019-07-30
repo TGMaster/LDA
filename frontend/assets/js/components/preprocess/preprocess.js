@@ -43,6 +43,7 @@ angular.module('springboot', [])
                 Util.createRequest(request, null, function (response) {
                     var status = response.status;
                     if (status === 200) {
+                        Util.showSuccessToast("Loaded dataset successfully!");
                         $scope.columns = response.data;
                     } else {
                         var err = _.find(APIStatus, { status: status });

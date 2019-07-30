@@ -55,7 +55,7 @@ public class Preprocess {
                 .builder()
                 .appName("JavaLDAExample")
                 .config("spark.master", "local[*]")
-                .config("spark.executor.memory", "4g")
+                .config("spark.executor.memory", "10g")
                 .getOrCreate();
 
         // Hide spark logging
@@ -87,7 +87,7 @@ public class Preprocess {
                 .builder()
                 .appName("JavaLDAExample")
                 .config("spark.master", "local[*]")
-                .config("spark.executor.memory", "4g")
+                .config("spark.executor.memory", "10g")
                 .getOrCreate();
 
         // Hide spark logging
@@ -118,7 +118,7 @@ public class Preprocess {
                 .builder()
                 .appName("JavaLDAExample")
                 .config("spark.master", "local[*]")
-                .config("spark.executor.memory", "4g")
+                .config("spark.executor.memory", "10g")
                 .getOrCreate();
 
         // Hide spark logging

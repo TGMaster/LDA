@@ -8,24 +8,9 @@ angular.module('springboot', [])
 
 			$scope.isShowResult = false;
 			$scope.submitting = false;
-			$scope.search = function () {
-				$scope.submitting = true;
-				Util.createRequest(API.SEARCH, $scope.keyword, function (response) {
-					var status = response.status;
-					if (status === 200) {
-						$scope.topics = angular.fromJson(response.data);
-						$scope.loadDiagram();
-					} else {
-						var err = _.find(APIStatus, { status: status });
-						if (err) {
-							Util.showErrorAPI(err.msgKey);
-						}
-					}
-					$scope.submitting = false;
-				});
-			};
 
 			$scope.loadDiagram = function () {
+				d3.selectAll('.model').selectAll('svg').remove();
 				// set the dimensions and margins of the graph
 				var margin = { top: 10, right: 30, bottom: 70, left: 30 },
 					width = 900 - margin.left - margin.right,
@@ -102,7 +87,7 @@ angular.module('springboot', [])
 					.style("font-size", "16px")
 					.style("text-decoration", "underline")
 					.style("font-weight", "bold")
-					.text("Topic distribution of the new text");
+					.text("Topic distribution of the new review");
 
 				// Animation
 				svg.selectAll("rect")
@@ -112,6 +97,24 @@ angular.module('springboot', [])
 					.attr("height", function (d) { return height - y(d.probability); })
 					.delay(function (d, i) { return (i) });
 			}
+
+			$scope.search = function () {
+				$scope.submitting = true;
+				Util.createRequest(API.SEARCH, $scope.keyword, function (response) {
+					var status = response.status;
+					if (status === 200) {
+						$scope.topics = angular.fromJson(response.data);
+						Util.showSuccessToast("Submit review successfully!");
+						$scope.loadDiagram();
+					} else {
+						var err = _.find(APIStatus, { status: status });
+						if (err) {
+							Util.showErrorAPI(err.msgKey);
+						}
+					}
+					$scope.submitting = false;
+				});
+			};
 
 			click();
 		}

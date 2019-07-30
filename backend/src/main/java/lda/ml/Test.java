@@ -48,7 +48,7 @@ public class Test {
                 .builder()
                 .appName("JavaLDAExample")
                 .config("spark.master", "local[*]")
-                .config("spark.executor.memory", "4g")
+                .config("spark.executor.memory", "10g")
                 .getOrCreate();
 
         Dataset<Row> dataset = Preprocess.preprocess(input);

@@ -41,7 +41,7 @@ public class Train {
                 .builder()
                 .appName("JavaLDAExample")
                 .config("spark.master", "local[*]")
-                .config("spark.executor.memory", "4g")
+                .config("spark.executor.memory", "10g")
                 .getOrCreate();
 
         // Hide spark logging
@@ -55,7 +55,7 @@ public class Train {
         CountVectorizerModel vectorizer = new CountVectorizer()
                 .setInputCol("words")
                 .setOutputCol("vector")
-                .setVocabSize(1500000) //Maximum size of vocabulary
+                .setVocabSize(100000) //Maximum size of vocabulary
                 .setMinDF(5) //Minumum number of document a term must appear
                 .setMaxDF(0.6*1000)
                 .fit(dataset);
@@ -78,6 +78,8 @@ public class Train {
                 .setFeaturesCol("vector")
                 .setDocConcentration(alpha)
                 .setTopicConcentration(beta)
+                .setLearningDecay(0.9)
+                .setLearningOffset(10.)
                 .fit(dataset);
 
         try {
